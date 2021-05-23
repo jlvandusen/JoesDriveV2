@@ -34,12 +34,33 @@
 #define S2S_offset -120
 #endif
 
+//#ifdef MOVECONTROLLER_ESP32
+//#define NeoPixel_pin 27
+//#define S2S_pin_1 39
+//#define S2S_pin_2 36
+//#define drivePin_1 4
+//#define drivePin_2 34
+//#define S2SPot_pin A0
+//#define S2S_offset -120
+//#endif
+
+/*
+A0 - this is an analog input A0 and also an analog output DAC2. It can also be used as a GPIO #26. It uses ADC #2
+A1 - this is an analog input A1 and also an analog output DAC1. It can also be used as a GPIO #25. It uses ADC #2
+A2 - this is an analog input A2 and also GPI #34. Note it is not an output-capable pin! It uses ADC #1
+A3 - this is an analog input A3 and also GPI #39. Note it is not an output-capable pin! It uses ADC #1
+A4 - this is an analog input A4 and also GPI #36. Note it is not an output-capable pin! It uses ADC #1
+A5 - this is an analog input A5 and also GPIO #4. It uses ADC #2
+21 - General purpose IO pin #21
+
+ */
+
 #ifdef MOVECONTROLLER_ESP32
-#define NeoPixel_pin 27
-#define S2S_pin_1 39
-#define S2S_pin_2 36
-#define drivePin_1 4
-#define drivePin_2 34
+#define NeoPixel_pin 4
+#define S2S_pin_1 34
+#define S2S_pin_2 25
+#define drivePin_1 36
+#define drivePin_2 39
 #define S2SPot_pin A0
 #define S2S_offset -120
 #endif
@@ -226,7 +247,7 @@ Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(VS1053_RESET
 #ifdef MOVECONTROLLER_ESP32
 #define SERIAL2_BAUD_RATE 74880
 #define SERIAL2_RX_PIN 12
-#define SERIAL2_TX_PIN 13
+#define SERIAL2_TX_PIN 27
 //#include <SoftwareSerial.h>
 //SoftwareSerial Serial3;
 //#define SERIAL3_BAUD_RATE 74880
@@ -380,10 +401,10 @@ void loop() {
   if(currentMillis - lastLoopMillis >= 10){
     lastLoopMillis = currentMillis; 
     receiveRemote();
-//    S2S_Movement(); 
-//    drive_Movement(); 
-//    sendDataTo32u4();
-//    sounds(); 
+    S2S_Movement(); 
+    drive_Movement(); 
+    sendDataTo32u4();
+    sounds(); 
     if(currentMillis - lastPrintMillis >= 70){
           lastPrintMillis = currentMillis;
 //          debugRoutines();
@@ -755,7 +776,11 @@ void receiveIMU(){
   if(recIMU.receiveData()){
    IMUmillis = currentMillis; 
    sendTo32u4Data.roll = receiveIMUData.roll;
-   sendTo32u4Data.pitch = receiveIMUData.pitch; 
+   sendTo32u4Data.pitch = receiveIMUData.pitch;
+   DEBUG_PRINT("IMU ROLL: ");
+   DEBUG_PRINT(receiveIMUData.roll);
+   DEBUG_PRINT(" IMU PITCH: ");
+   DEBUG_PRINT(receiveIMUData.pitch);
     if(IMUconnected == false) {
       IMUconnected = true;
       DEBUG_PRINTLN("IMU Connected");
