@@ -6,8 +6,7 @@
 //#define debugMainDrive
 //#define debugS2S
 //#define debugSounds
-//#define MOVECONTROLLER
-#define MOVECONTROLLER_ESP32
+#define MOVECONTROLLER
 //#define XBOXCONTROLLER   
 
 /*
@@ -25,22 +24,14 @@
   PIN DEFINITIONS
 */
 
-#ifndef MOVECONTROLLER_ESP32  //If using a Xbox Controller joined to the ESP32
-#define NeoPixel_pin 19
-#define S2S_pin_1 16
-#define S2S_pin_2 15
-#define drivePin_1 18
-#define drivePin_2 17
-#define S2SPot_pin A0
-#define S2S_offset -120
-#endif
-
-#ifdef MOVECONTROLLER_ESP32 //If using a Move, PS3,4 or 5 controller joined to the ESP32
+#ifdef MOVECONTROLLER //If using a Move, PS3,4 or 5 controller joined to the ESP32
 #define NeoPixel_pin 27
+#define S2S_pwm 22  // SCL 22 and SDA 23
 #define S2S_pin_1 26 //A0
 #define S2S_pin_2 25 //A1
-#define drivePin_1 4
-#define drivePin_2 21
+#define Drive_pwm 23  // SCL 22 and SDA 23
+#define Drive_pin_1 4
+#define Drive_pin_2 21
 #define S2SPot_pin A2 //GPIO 34
 #define S2S_offset -120
 #endif
@@ -55,6 +46,8 @@ A3 - this is an analog input A3 and also GPI #39. Note it is not an output-capab
 A4 - this is an analog input A4 and also GPI #36. Note it is not an output-capable pin! It uses ADC #1
 A5 - this is an analog input A5 and also GPIO #4. It uses ADC #2
 21 - General purpose IO pin #21
+SCL - General purpose IO pin #22
+SDA - General purpose IO pin #23
  */
 
 /*
@@ -69,7 +62,7 @@ A5 - this is an analog input A5 and also GPIO #4. It uses ADC #2
 //#include <XBOXRECV.h>
 //#endif
 
-#ifdef MOVECONTROLLER_ESP32
+#ifdef MOVECONTROLLER
 #include <analogWrite.h>
 #include <PSController.h>
 #define DRIVE_CONTROLLER_MAC  nullptr
@@ -103,7 +96,7 @@ A5 - this is an analog input A5 and also GPIO #4. It uses ADC #2
 //PS3BT *PS3[2]; // We will use this pointer to store the two instance, you can easily make it larger if you like, but it will use a lot of RAM!
 //#endif
 
-#ifdef MOVECONTROLLER_ESP32
+#ifdef MOVECONTROLLER
 PSController driveController(DRIVE_CONTROLLER_MAC); //define the driveController variable to be used against the Nav1 and Nav2 controllers.
 PSController domeController(DOME_CONTROLLER_MAC);
 #endif
@@ -144,7 +137,7 @@ RECEIVE_DATA_STRUCTURE_IMU receiveIMUData;
 //};
 //#endif
 
-#ifdef MOVECONTROLLER_ESP32
+#ifdef MOVECONTROLLER
 struct SEND_DATA_STRUCTURE_32u4{  
   bool driveEnabled;
   int8_t domeSpin;
@@ -179,7 +172,7 @@ RECEIVE_DATA_STRUCTURE_32u4 receiveFrom32u4Data; // - slave_data
 //controllerButtons buttons;
 //#endif
 
-#ifdef MOVECONTROLLER_ESP32
+#ifdef MOVECONTROLLER
 struct controllerButtonsL{
   bool cross,circle,up,down,left,right,ps,l1,l3;
   int8_t leftStickX,leftStickY,l2;
@@ -202,7 +195,7 @@ int8_t joystickDeadZoneRange = 25;  // For controllers that centering problems, 
 #define VS1053_DREQ    15     // VS1053 Data request, ideally an Interrupt pin
 Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
   
-//#ifndef MOVECONTROLLER_ESP32
+//#ifndef MOVECONTROLLER
 //  Uart Serial2 (&sercom1, 12, 11, SERCOM_RX_PAD_3, UART_TX_PAD_0);
 //  void SERCOM1_Handler()
 //  {
@@ -216,7 +209,7 @@ Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(VS1053_RESET
 //  }
 //#endif
 
-#ifdef MOVECONTROLLER_ESP32
+#ifdef MOVECONTROLLER
 #define SERIAL2_BAUD_RATE 74880
 #define SERIAL2_RX_PIN 27
 #define SERIAL2_TX_PIN 12
@@ -263,32 +256,12 @@ PID myPID_Drive(&Input_Drive, &Output_Drive, &Setpoint_Drive, Kp_Drive, Ki_Drive
 bool enabledDrive;
   
 void setup() {
-   
+  currentMillis = millis();
   Serial.begin(115200);
-//  SerialDebug.begin(115200);
-//#ifndef MOVECONTROLLER_ESP32 
-//  Serial1.begin(115200);
-//  Serial2.begin(74880);
-//  Serial3.begin(74880);
-//  pinPeripheral(11, PIO_SERCOM);
-//  pinPeripheral(12, PIO_SERCOM);
-//  pinPeripheral(20, PIO_SERCOM);
-//  pinPeripheral(21, PIO_SERCOM);
-//#endif
-  
-//  #ifdef XBOXCONTROLLER
-//  if (UsbH.Init()) {
-//    SerialDebug.print(F("\r\nUSB host did not start"));
-//    while (1); //haltv
-//  }
-//  SerialDebug.print(F("\r\nXbox Wireless Receiver Library Started"));
-//  #endif
-
-
-  #ifdef MOVECONTROLLER_ESP32
   Serial1.begin(115200);
   Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN);
 //  Serial3.begin(SERIAL3_BAUD_RATE, SWSERIAL_8N1, SERIAL3_RX_PIN, SERIAL3_TX_PIN,false,256);
+  #ifdef MOVECONTROLLER
   PSController::startListening(MasterNav);
   String address = PSController::getDeviceAddress();
   Serial.print("Please write down the following MAC and Assign to your Nav Controller(s): ");
@@ -322,41 +295,40 @@ void setup() {
   send32u4.begin(details(sendTo32u4Data), &Serial2);
 
 // Lets do some spot checks on the connections to other chips/CPUs
-//  delay(15000);
-//  if(rec32u4.receiveData()){
-//    rec32u4Millis = currentMillis;
-//    if(feather2Connected == false){
-//      feather2Connected = true;
-//      Serial.println("32u4 Connected");
-//    } else {
-//        feather2Connected = false; 
-//        Serial.println("32u4 Not Connected");
-//    }
-//  } else {
-//      feather2Connected = false; 
-//      Serial.println("32u4 Not Connected");
-//    }
-
-  if(Serial2.begin()
-    {
-      feather2Connected = true;
-      Serial.println("32u4 Connected");
-    } else {
-      Serial.println("32u4 Not Connected");
-      feather2Connected = false; 
+   if(!rec32u4.receiveData()){
+        feather2Connected = false; 
+        Serial.println("32u4 Not Connected");
+   } else {
+      if(feather2Connected == false){
+        rec32u4Millis = currentMillis;
+        feather2Connected = true;
+        Serial.println("32u4 Connected");
+      }
     }
-  if(recIMU.receiveData()){
-    if(IMUconnected == false) {
+  if(!recIMU.receiveData()){
+    IMUmillis = currentMillis; 
+    IMUconnected = false; 
+    Serial.println("IMU Not Connected");
+  } else {
+    if(IMUconnected == false){
+      IMUmillis = currentMillis;
       IMUconnected = true;
       Serial.println("IMU Connected");
-    } else if((currentMillis - IMUmillis) > 25) {
-        IMUconnected = false; 
-        Serial.println("IMU Not Connected");
-      } 
-  } else {
-      IMUconnected = false;
+    }
+    if((currentMillis - IMUmillis) > 25) {
+      IMUconnected = false; 
       Serial.println("IMU Not Connected");
     }
+  }
+
+  /* Set the pins to correct method for use for the DFRobot Motor Driver */
+  pinMode(S2S_pwm, OUTPUT);  // Speed Of Motor2 on Motor Driver 1 
+  pinMode(S2S_pin_1, OUTPUT);  // Direction
+  pinMode(S2S_pin_2, OUTPUT);
+  pinMode(Drive_pwm, OUTPUT);  // Speed of Motor2 on Motor Driver 2 
+  pinMode(Drive_pin_1, OUTPUT);  // Direction
+  pinMode(Drive_pin_2, OUTPUT);
+
 }
 
 
@@ -367,46 +339,39 @@ void setup() {
 void loop() {
   currentMillis = millis(); 
   receiveIMU();
-  if(currentMillis - lastLoopMillis >= 10){
+  if(currentMillis - lastLoopMillis >= 10) {
     lastLoopMillis = currentMillis; 
     receiveRemote();
     S2S_Movement(); 
     drive_Movement(); 
     sendDataTo32u4();
     sounds(); 
-    if(currentMillis - lastPrintMillis >= 70){
-          lastPrintMillis = currentMillis;
-          debugRoutines();
+    if(currentMillis - lastPrintMillis >= 70) {
+      lastPrintMillis = currentMillis;
+      debugRoutines();
     }
   }
-// #ifndef MOVECONTROLLER_ESP32     
-//    if(feather2Connected){
-//      digitalWrite(13, HIGH);
-//    }else{
-//      digitalWrite(13, LOW);
-//    }
-//  #endif
 }
 
 
   
 void receiveRemote() {
-  #ifdef MOVECONTROLLER_ESP32
+  #ifdef MOVECONTROLLER
   if (driveController.isConnected()) {
-    if (!drivecontrollerConnected){
+    if (!drivecontrollerConnected){ // notify us of the connection as long as the status is false
       Serial.println("We have our Drive Nav Controller");
       batterycheck();
     }
-    drivecontrollerConnected = true;
-  }  else drivecontrollerConnected = false; 
+    drivecontrollerConnected = true; // Set the status to true
+  }  else drivecontrollerConnected = false; // Set the status back to false
   if (domeController.isConnected()) {
-    if (!domecontrollerConnected){
+    if (!domecontrollerConnected){ // notify us of the connection as long as the status is false
       Serial.println("We have our Dome Nav Controller");
       batterycheck();
     }
-    domecontrollerConnected = true;
+    domecontrollerConnected = true; // Set the status to true
   }
-  else domecontrollerConnected = false; 
+  else domecontrollerConnected = false; // Set the status to false
   if ((drivecontrollerConnected) || (domecontrollerConnected) ) {
     controllerConnected = true;
     controllerButtonsR previousStateR = buttonsR;
@@ -570,8 +535,11 @@ void sendDataTo32u4(){
 
 
 void S2S_Movement(){
+//  Using the DFRobot Motor Driver we need 3 pins
+//  VCC and GND to power the driver logic
+//  First pin is PWM for speed control 0 - 255
+//  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop
 
-#ifdef MOVECONTROLLER_ESP32
   if (IMUconnected){
   Input_S2S_Servo = receiveIMUData.roll *-1;
   } else {
@@ -592,22 +560,29 @@ void S2S_Movement(){
   myPID_S2S_Stabilization.Compute(); 
   
   if(Output_S2S_Stabilization > 5 && controllerConnected && enableDrive){
-    analogWrite(S2S_pin_1, map(abs(Output_S2S_Stabilization),0,255,0,220));
-    analogWrite(S2S_pin_2, 0); 
+    digitalWrite(S2S_pin_1, LOW);
+    digitalWrite(S2S_pin_2, HIGH); // Motor 1 Forward
+    analogWrite(S2S_pwm, map(abs(Output_S2S_Stabilization),0,255,0,220));
+//    analogWrite(S2S_pin_2, 0); 
   }else if(Output_S2S_Stabilization < -5 && controllerConnected && enableDrive){
-    analogWrite(S2S_pin_1,  0);
-    analogWrite(S2S_pin_2,  map(Output_S2S_Stabilization,-255,0,220,0));
+    digitalWrite(S2S_pin_1, HIGH);
+    digitalWrite(S2S_pin_2, LOW); // Motor 1 Backwards
+//    analogWrite(S2S_pin_1,  0);
+    analogWrite(S2S_pwm, map(Output_S2S_Stabilization,-255,0,220,0));
     
   }else{
-    analogWrite(S2S_pin_2,  0);
-    analogWrite(S2S_pin_1,  0);
+    digitalWrite(S2S_pin_1, LOW);
+    digitalWrite(S2S_pin_2, LOW); // Motor 1 stopped
   }
-  #endif
 
 }
 
 void drive_Movement(){
-  #ifdef MOVECONTROLLER_ESP32
+//  Using the DFRobot Motor Driver we need 3 pins
+//  VCC and GND to power the driver logic
+//  First pin is PWM for speed control 0 - 255
+//  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop
+
   Input_Drive = receiveIMUData.pitch; 
   if(reverseDrive == false){
     buttonsR.rightStickY *= -1;
@@ -624,53 +599,26 @@ void drive_Movement(){
   myPID_Drive.Compute(); 
   
   if (Output_Drive > 5 && controllerConnected && enableDrive) {
-    analogWrite(drivePin_2, map(abs(Output_Drive),0,255,0,220));
-    analogWrite(drivePin_1,0); 
+    digitalWrite(Drive_pin_1, LOW);
+    digitalWrite(Drive_pin_2, HIGH); // Motor 2 Forward
+    analogWrite(Drive_pwm, map(abs(Output_Drive),0,255,0,220));
+//    analogWrite(Drive_pin_1,0); 
   } else if(Output_Drive < -5 && controllerConnected && enableDrive) {
-      analogWrite(drivePin_2, 0);
-      analogWrite(drivePin_1, map(abs(Output_Drive),0,255,0,220));
+    digitalWrite(Drive_pin_1, HIGH);
+    digitalWrite(Drive_pin_2, LOW); // Motor 2 Backwards
+//      analogWrite(Drive_pin_2, 0);
+    analogWrite(Drive_pwm, map(abs(Output_Drive),0,255,0,220));
   
    } else {
-      analogWrite(drivePin_2, 0);
-      analogWrite(drivePin_1,0);
+    digitalWrite(Drive_pin_1, LOW);
+    digitalWrite(Drive_pin_2, LOW); // Motor 2 stopped
       }
-#endif
-//  #ifdef XBOXCONTROLLER
-//  Input_Drive = receiveIMUData.pitch; 
-//  if(reverseDrive == false){
-//    buttons.rightStickY *= -1;
-//  }
-//    
-//    if(Setpoint_Drive_In > buttons.rightStickY){
-//      Setpoint_Drive_In-=driveDelay; 
-//    }else if(Setpoint_Drive_In < buttons.rightStickY){
-//      Setpoint_Drive_In+=driveDelay; 
-//    }
-//
-//    Setpoint_Drive = map(Setpoint_Drive_In,-100,100,-40,40); 
-//  
-//  //Setpoint_Drive = buttons.rightStickY * -1; 
-//  myPID_Drive.Compute(); 
-//
-//    if(Output_Drive > 5 && controllerConnected && enableDrive){
-//    analogWrite(drivePin_2, map(abs(Output_Drive),0,255,0,220));
-//    analogWrite(drivePin_1,0); 
-//  }else if(Output_Drive < -5 && controllerConnected && enableDrive){
-//    analogWrite(drivePin_2, 0);
-//    analogWrite(drivePin_1, map(abs(Output_Drive),0,255,0,220));
-//    
-//  }else{
-//    analogWrite(drivePin_2, 0);
-//    analogWrite(drivePin_1,0);
-//  }
-//  #endif
-  
 
 }
 
-void sounds(){
+void sounds() {
 
-#ifdef MOVECONTROLLER_ESP32 //******Move Controller
+#ifdef MOVECONTROLLER //******Move Controller
   if(buttonsL.circle == 1  && musicPlayer.stopped()){
   //if(musicPlayer.stopped()){
     musicPlayer.startPlayingFile(soundNames[i]);
