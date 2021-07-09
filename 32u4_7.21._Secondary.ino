@@ -1,6 +1,18 @@
+/*
+ * Joe's Drive  - V2 7/7/2021
+ * Secondary 32u4
+ * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
+ * You will need libraries: 
+ * HUZZAH32 From Adafruit: https://www.adafruit.com/product/3619
+ * ESp32 Libraries: https://learn.adafruit.com/adafruit-huzzah32-esp32-feather/pinouts?view=all#using-with-arduino-ide
+ * Adafruit VS1053 Featherwing MusicPlayer: https://github.com/adafruit/Adafruit_VS1053_Library
+ * Utilizes ESP32NOW technology over WiFi to talk between Dome and Body - need to capture the Wifi MAC during bootup.
+ * replace this with the mac of dome uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+*/
 
-/*   Debug functions
- *   Uncomment to debug to Serial
+/*
+ * Debug Configurations
+ * Comment and uncomment which function needs to be debugged
 */
 //#define debugDomeAndFly
 //#define printRemote
@@ -20,7 +32,6 @@
 /* Debug Printlines */
 #define DEBUG_PRINTLN(s) Serial.println(s)
 #define DEBUG_PRINT(s) Serial.print(s)
-
 
 /*
  * PIN DEFINITIONS
