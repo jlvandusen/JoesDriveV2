@@ -1,27 +1,71 @@
-   
-#define DEBUG_PRINTLN(s) Serial.println(s)
-#define DEBUG_PRINT(s) Serial.print(s)
-//#define debugRemote
-#define debugIMU
-//#define debugMainDrive
-//#define debugS2S
-//#define debugSounds
-#define MOVECONTROLLER
-//#define XBOXCONTROLLER   
+/*
+ * Joe's Drive  - V2 7/7/2021
+ * Primary ESP32 HUZZAH32
+ * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
+ * You will need libraries: 
+ * HUZZAH32 From Adafruit: https://www.adafruit.com/product/3619
+ * ESp32 Libraries: https://learn.adafruit.com/adafruit-huzzah32-esp32-feather/pinouts?view=all#using-with-arduino-ide
+ * Adafruit VS1053 Featherwing MusicPlayer: https://github.com/adafruit/Adafruit_VS1053_Library
+ * Utilizes ESP32NOW technology over WiFi to talk between Dome and Body - need to capture the Wifi MAC during bootup.
+ * replace this with the mac of dome uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+*/
 
 /*
-  MAC ADDRESS DEFINITIONS
-  Signifies the primary MAC of the ESP32/USB BT chip
+ * Debug Configurations
+ * Comment and uncomment which function needs to be debugged
 */
-// Bluetooth address of this ESP32 device. If you already have a Shadow system configured
-// the easiest thing is reuse the address of your USB Bluetooth dongle here. Alternatively,
-// you can use sixaxispair to pair your controllers with the ESP32.
-// https://www.adafruit.com/product/3619
 
+#define DEBUG_PRINTLN(s) Serial.println(s)
+#define DEBUG_PRINT(s) Serial.print(s)
+//#define debugDome // Validate and feedback what is being received from Dome (PSI, HP and Bat)
+//#define debugDomeSpin
+//#define debugFlywheel
+//#define debugRemote
+//#define debugIMU
+//#define debugMainDrive
+//#define debugS2S
+#define debugSounds
+//#define debugESPNOW // Configure the system to display its wifi mac and bluetooth addresses for insert into Dome code.
+//#define debugdebugESPNOWConfig  // Configure the system to display its wifi mac and bluetooth addresses for insert into Body code.
+
+
+/*
+ * Controller Configurations
+ * Comment and uncomment which controller you wish to use (only 1 type can be used at any given time)
+*/
+
+#define MOVECONTROLLER
+//#define XBOXCONTROLLER
+
+/*
+ * Music Controller
+ * Used to enable or disable use of VS1053 Musicplayer Featherwing
+*/
+
+#define MUSICPLAYER_FEATHERWING
+
+/*
+ * Communication Functions of ESP32
+ * Used to enable or disable use of communication methods to ESP32, can you multiple
+*/
+
+//#define WIFIACCESSPOINT  // BB8 Main Controls are exposed over a Wifi AccessPoint with its own network
+//#define BTSerialMode // Allow Main Controls exposed via BlueTooth alongside Controller support
+#define ESPNOW // Allow ESP communications over Wifi to Dome ESP32
+
+
+/*
+ * MAC ADDRESS DEFINITIONS
+ * Signifies the primary MAC of the ESP32/USB BT chip
+ * Bluetooth address of this ESP32 device. If you already have a Shadow system configured
+ * the easiest thing is reuse the address of your USB Bluetooth dongle here. Alternatively,
+ * you can use sixaxispair to pair your controllers with the ESP32.
+ * https://www.adafruit.com/product/3619
+*/
 #define MasterNav "7c:9e:bd:d7:63:c6" 
    
 /*
-  PIN DEFINITIONS
+ * PIN DEFINITIONS
 */
 
 #ifdef MOVECONTROLLER //If using a Move, PS3,4 or 5 controller joined to the ESP32
@@ -37,6 +81,77 @@
 #endif
 
 /*
+ * Creates a WiFi access point and provides a web server on it.
+ * Steps:
+ *    1. Connect to the access point "bb8v2"
+ *    2. Point your web browser to http://192.168.4.1/H to turn the LED on or http://192.168.4.1/L to turn it off
+ * OR
+ * 
+ * Run raw TCP "GET /H" and "GET /L" on PuTTY terminal with 192.168.4.1 as IP address and 80 as port
+ * Created for arduino-esp32 on 04 July, 2018 by Elochukwu Ifediora (fedy0)
+*/
+
+#ifdef WIFIACCESSPOINT
+#include <WiFi.h>
+#include <WiFiClient.h>
+#include <WiFiAP.h>
+
+#define LED_BUILTIN 2   // Set the GPIO pin where you connected your test LED or comment this line out if your dev board has a built-in LED
+
+// Set these to your desired credentials.
+const char *ssid = "bb8v2";
+const char *password = "greatcheese061";
+WiFiServer server(80);
+#endif
+
+#ifdef BTSerialMode
+  #include "BluetoothSerial.h"
+  BluetoothSerial SerialBT;
+  //String MACadd = "AA:BB:CC:11:22:33";
+  //uint8_t address[6]  = {0xAA, 0xBB, 0xCC, 0x11, 0x22, 0x33};
+  String name = "DESKTOP-9IKITLF";
+  const char *pin = "1234"; //<- standard pin would be provided by default
+  bool connected;
+#endif
+
+#ifdef ESPNOW
+// Complete Instructions to Get and Change ESP MAC Address: https://RandomNerdTutorials.com/get-change-esp32-esp8266-mac-address-arduino/
+// As per the following walkthrough https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
+#include <esp_now.h>
+#include "WiFi.h"
+// broadcastAddress REPLACE WITH THE MAC Address of your receiver - the other ESP32 in BB8 Dome (loopback {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};)
+uint8_t broadcastAddress[] = {0xF1, 0xFF, 0xF1, 0xFF, 0xFF, 0xFF};
+
+// Define variables to store incoming readings
+int incomingPSI = 0;
+byte incomingHP = 0;
+float incomingBAT = 0;      
+
+// Define variables to store readings to be sent
+int sendPSI = 0;
+byte sendBTN = 0;
+float sendBAT = 0;    
+
+// Variable to store if sending data was successful
+String success;
+
+// Structure to send data
+// Must match the receiver structure
+typedef struct struct_message {
+    int psi;
+    byte btn;
+    float bat;
+} struct_message;
+// Create a struct_message called outgoingReadings to hold sensor readings
+struct_message outgoingReadings;
+
+// Create a struct_message to hold incoming sensor readings
+struct_message incomingReadings;
+
+#endif
+
+
+/*
  * ESP32 FEATHER INFORMATION
  * Chip used: Adafruit ESP32 HUZZAH32 with stacking headers https://www.adafruit.com/product/3619
 A0 - this is an analog input A0 and also an analog output DAC2. It can also be used as a GPIO #26. It uses ADC #2
@@ -50,13 +165,9 @@ SCL - General purpose IO pin #22
 SDA - General purpose IO pin #23
  */
 
-/*
- Modified USB Host library: https://github.com/gdsports/USB_Host_Library_SAMD
- Modified ESP32 BT Host Library https://github.com/reeltwo/PSController
-*/
 
 /*
-  LIBRARY DEFINITIONS
+ * LIBRARY DEFINITIONS
 */
 //#ifdef XBOXCONTROLLER
 //#include <XBOXRECV.h>
@@ -72,14 +183,27 @@ SDA - General purpose IO pin #23
 #include <Arduino.h>
 #include <EasyTransfer.h>
 #include <Wire.h>
-//#include <i2cSimpleTransfer.h>
-//#include <EasyTransferI2C_NL.h>
-//#include <EasyTransferI2C.h>
 #include <SPI.h>
-#include <SD.h>
-#include <Adafruit_VS1053.h>
+
+/*
+ * FORMATTING and preparing the SD card with Sound files
+ * Press WIN+R key combination to open Run dialogue, input “cmd” and press “Enter” to open the Command Prompt window. 
+ * Then execute the following commands in turn:
+ * diskpart
+ * list disk
+ * select disk m, where m is the SD card number.
+ * clean
+ * create partition primary
+ * format fs=fat32 quick
+ * 
+ */
+#ifdef MUSICPLAYER_FEATHERWING
+  #include <SD.h>
+  #include <Adafruit_VS1053.h>
+#endif
+
 #include <PID_v1.h>
-#include "wiring_private.h" // pinPeripheral() function
+//#include "wiring_private.h" // pinPeripheral() function
 
 #define BUFFER_LENGTH 64
 #define TWI_BUFFER_LENGTH 64
@@ -90,54 +214,31 @@ SDA - General purpose IO pin #23
 //XBOXRECV Xbox(&UsbH);
 //#endif
 
-//#ifdef MOVECONTROLLER
-//USBHost UsbH;
-//BTD Btd(&UsbH); // You have to create the Bluetooth Dongle instance like so
-//PS3BT *PS3[2]; // We will use this pointer to store the two instance, you can easily make it larger if you like, but it will use a lot of RAM!
-//#endif
-
 #ifdef MOVECONTROLLER
 PSController driveController(DRIVE_CONTROLLER_MAC); //define the driveController variable to be used against the Nav1 and Nav2 controllers.
 PSController domeController(DOME_CONTROLLER_MAC);
 #endif
 
-//create UART object *************************************
+/*
+ * Create UART Functions
+*/
 EasyTransfer recIMU; 
 EasyTransfer send32u4;
 EasyTransfer rec32u4; 
-//EasyTransferI2C_NL recIMU;
-//EasyTransferI2C_NL send32u4;
-//EasyTransferI2C_NL rec32u4; 
-//EasyTransferI2C recIMU;
-//EasyTransferI2C send32u4;
-//EasyTransferI2C rec32u4; 
 
-struct RECEIVE_DATA_STRUCTURE_IMU{
+/*
+ * Create receive IMU from Trinket M0 Objects
+*/
+struct RECEIVE_DATA_STRUCTURE_IMU {
   float pitch;
   float roll; 
 };
-
 RECEIVE_DATA_STRUCTURE_IMU receiveIMUData;
 
 
-//create SEND object  *************************************
-
-//#ifdef XBOXCONTROLLER
-//struct SEND_DATA_STRUCTURE_32u4{  
-//  bool driveEnabled;
-//  int8_t domeSpin;
-//  bool xboxL3;
-//  int8_t flywheel;
-//  bool xboxR3;
-//  int8_t leftStickX;
-//  int8_t leftStickY;
-//  bool psiFlash;
-//  float pitch;
-//  float roll; 
-//};
-//#endif
-
-#ifdef MOVECONTROLLER
+/*
+ * Create Send to the 32u4 Feather Objects
+*/
 struct SEND_DATA_STRUCTURE_32u4{  
   bool driveEnabled;
   int8_t domeSpin;
@@ -152,17 +253,15 @@ struct SEND_DATA_STRUCTURE_32u4{
   float pitch;
   float roll; 
 };
-#endif
+SEND_DATA_STRUCTURE_32u4 sendTo32u4Data;
 
-//give a name to the group of data
-SEND_DATA_STRUCTURE_32u4 sendTo32u4Data; // - slave_config
-
-struct RECEIVE_DATA_STRUCTURE_32u4{ // - SLAVE_DATA
+/*
+ * Create Receive from 32u4 Objects
+*/
+struct RECEIVE_DATA_STRUCTURE_32u4 {
   int16_t tiltAngle; 
 };
-
-//give a name to the group of data
-RECEIVE_DATA_STRUCTURE_32u4 receiveFrom32u4Data; // - slave_data
+RECEIVE_DATA_STRUCTURE_32u4 receiveFrom32u4Data;
 
 //#ifdef XBOXCONTROLLER
 //struct controllerButtons{
@@ -173,11 +272,11 @@ RECEIVE_DATA_STRUCTURE_32u4 receiveFrom32u4Data; // - slave_data
 //#endif
 
 #ifdef MOVECONTROLLER
-struct controllerButtonsL{
+struct controllerButtonsL {
   bool cross,circle,up,down,left,right,ps,l1,l3;
   int8_t leftStickX,leftStickY,l2;
 };
-struct controllerButtonsR{
+struct controllerButtonsR {
   bool cross,circle,up,down,left,right,ps,l1,l3;
   int8_t rightStickX,rightStickY,l2;
 };
@@ -186,7 +285,7 @@ controllerButtonsR buttonsR;
 int8_t joystickDeadZoneRange = 25;  // For controllers that centering problems, use the lowest number with no drift
 #endif
 
-//*** Set up Music Maker Featherwing *******************************************
+#ifdef MUSICPLAYER_FEATHERWING
 #define VS1053_RESET   -1     // VS1053 reset pin (not used!)
 #define VS1053_CS      32     // VS1053 chip select pin (output)
 #define VS1053_DCS     33     // VS1053 Data/command select pin (output)
@@ -194,31 +293,23 @@ int8_t joystickDeadZoneRange = 25;  // For controllers that centering problems, 
 // DREQ should be an Int pin *if possible* (not possible on 32u4)
 #define VS1053_DREQ    15     // VS1053 Data request, ideally an Interrupt pin
 Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
-  
-//#ifndef MOVECONTROLLER
-//  Uart Serial2 (&sercom1, 12, 11, SERCOM_RX_PAD_3, UART_TX_PAD_0);
-//  void SERCOM1_Handler()
-//  {
-//    Serial2.IrqHandler();
-//  }
-//
-//  Uart Serial3 (&sercom3, 21, 20, SERCOM_RX_PAD_1, UART_TX_PAD_0);
-//  void SERCOM3_Handler()
-//  {
-//    Serial3.IrqHandler();
-//  }
-//#endif
+#endif
 
-#ifdef MOVECONTROLLER
 #define SERIAL2_BAUD_RATE 74880
 #define SERIAL2_RX_PIN 27
 #define SERIAL2_TX_PIN 12
-//#include <SoftwareSerial.h>
-//SoftwareSerial Serial3;
-//#define SERIAL3_BAUD_RATE 74880
-//#define SERIAL3_RX_PIN 21
-//#define SERIAL3_TX_PIN 20
+
+/*
+ * Do we need an additional Serial to perform debugging?
+*/
+#ifdef debugSerial
+  #include <SoftwareSerial.h>
+  #define SERIAL3_BAUD_RATE 74880
+  #define SERIAL3_RX_PIN 21
+  #define SERIAL3_TX_PIN 20
+  SoftwareSerial Serial3;
 #endif
+
 
 
 #define SerialDebug Serial
@@ -232,6 +323,7 @@ double Setpoint_S2S_Servo, Input_S2S_Servo, Output_S2S_Servo;
 double Setpoint_S2S_Stabilization, Input_S2S_Stabilization, Output_S2S_Stabilization;
 double Setpoint_Drive, Input_Drive, Output_Drive, Setpoint_Drive_In;
 
+#ifdef MUSICPLAYER_FEATHERWING
 int numberOfTracks = 55; 
 int i; 
 char *soundNames[]={"ACK0000.ogg", "FUN0000.ogg",  "FUN0001.ogg",  "BEEP0000.ogg",  "ACK0001.ogg",  "BEEP0001.ogg",  "BEEP0002.ogg",  "BEEP0003.ogg",  "BEEP0004.ogg",  "BB80010.ogg",  
@@ -240,6 +332,7 @@ char *soundNames[]={"ACK0000.ogg", "FUN0000.ogg",  "FUN0001.ogg",  "BEEP0000.ogg
 "BB80033.ogg",  "BB80034.ogg",  "BB80035.ogg",  "BB80036.ogg",  "BB80037.ogg",  "BB80038.ogg",  "BB80039.ogg",  "BB80040.ogg",  "BB80041.ogg",  "BB80042.ogg",  "BB80043.ogg",  
 "BB80044.ogg",  "BB80045.ogg",  "BB80046.ogg",  "BB80047.ogg",  "BB80048.ogg",  "BB80049.ogg",  "BB80050.ogg",  "BB80051.ogg",  "BB80052.ogg",  "BB80053.ogg",  "BB80054.ogg",  
 "BB80055.ogg",  "BB80056.ogg"};
+#endif
 
   //Specify the links and initial tuning parameters
 double Kp_S2S_Servo=.5, Ki_S2S_Servo=0, Kd_S2S_Servo=0;
@@ -261,14 +354,87 @@ void setup() {
   Serial1.begin(115200);
   Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN);
 //  Serial3.begin(SERIAL3_BAUD_RATE, SWSERIAL_8N1, SERIAL3_RX_PIN, SERIAL3_TX_PIN,false,256);
-  #ifdef MOVECONTROLLER
+  delay(1000);
+
+#ifdef WIFIACCESSPOINT
+  Serial.println();
+  Serial.println("Configuring access point...");
+  WiFi.softAP(ssid, password);   // You can remove the password parameter if you want the AP to be open.
+  IPAddress myIP = WiFi.softAPIP();
+  Serial.print("AP IP address: ");
+  Serial.println(myIP);
+  server.begin();
+  Serial.println("Server started");
+#endif
+
+#ifdef BTSerialMode
+// connect(address) is fast (upto 10 secs max), connect(name) is slow (upto 30 secs max) as it needs
+// to resolve name to address first, but it allows to connect to different devices with the same name.
+// Set CoreDebugLevel to Info to view devices bluetooth address and device names
+//  SerialBT.begin("BB8"); //Bluetooth device name
+  SerialBT.begin("BB8", true);  
+  Serial.println("The device started in master mode, make sure remote BT device is on!");
+
+  connected = SerialBT.connect(name);
+//connected = SerialBT.connect(address);
+  if (connected) {
+    while(!connected) {
+      Serial.println("Failed to connect. Make sure remote device is available and in range, then restart app."); 
+    }
+    Serial.println("Connected Succesfully!");
+  }
+  // disconnect() may take upto 10 secs max
+  if (SerialBT.disconnect()) {
+    Serial.println("Disconnected Succesfully!");
+  }
+  // this would reconnect to the name(will use address, if resolved) or address used with connect(name/address).
+  SerialBT.connect();
+#endif
+
+#ifdef debugESPNOWConfig
+  WiFi.mode(WIFI_MODE_STA);
+  Serial.print("Please write down the following WIFI MAC: ");
+  Serial.println(WiFi.macAddress());
+#endif
+
+#ifdef ESPNOW
+  WiFi.mode(WIFI_STA); // Set device as a Wi-Fi Station
+  Serial.println("WIFI ESPNOW preparing...");
+  // Init ESP-NOW
+  if (esp_now_init() != ESP_OK) {
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  } else Serial.println("Success initializing ESP-NOW");
+
+  // Once ESPNow is successfully Init, we will register for Send CB to
+  // get the status of Trasnmitted packet
+  esp_now_register_send_cb(OnDataSent);
+
+  // Register peer
+  esp_now_peer_info_t peerInfo;
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = 0;  
+  peerInfo.encrypt = false;
+
+  // Add peer        
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+    Serial.println("Failed to add peer");
+    return;
+  } else Serial.println("Found dome ESP32 peer and added over ESPNOW");
+  
+  // Register for a callback function that will be called when data is received
+  esp_now_register_recv_cb(OnDataRecv);
+#endif
+
+#ifdef MOVECONTROLLER
   PSController::startListening(MasterNav);
   String address = PSController::getDeviceAddress();
   Serial.print("Please write down the following MAC and Assign to your Nav Controller(s): ");
   Serial.println(address);
   Serial.println("Bluetooth Ready.");
-  #endif
+#endif
   
+#ifdef MUSICPLAYER_FEATHERWING
   if (! musicPlayer.begin()) { // initialise the music player
      Serial.println(F("Couldn't find VS1053, do you have the right pins defined?"));
   } else {
@@ -280,6 +446,7 @@ void setup() {
   if (!SD.begin(CARDCS)) {
     Serial.println(F("SD failed, or not present"));
   } else Serial.println("SD OK!");
+#endif
 
   myPID_S2S_Servo.SetMode(AUTOMATIC);
   myPID_S2S_Servo.SetOutputLimits(-255, 255);
@@ -331,16 +498,13 @@ void setup() {
 
 }
 
-
-
-
-
-  
 void loop() {
   currentMillis = millis(); 
   receiveIMU();
   if(currentMillis - lastLoopMillis >= 10) {
     lastLoopMillis = currentMillis; 
+    wificlient();
+    sendReadings();
     receiveRemote();
     S2S_Movement(); 
     drive_Movement(); 
@@ -353,8 +517,108 @@ void loop() {
   }
 }
 
+/*  
+ *  ESPNOW Send readings back to the Body ESP32
+ *  See walkthrough: https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
+ */
+ 
+void sendReadings() {
+  outgoingReadings.psi = sendPSI;
+  outgoingReadings.btn = sendBTN;
+  outgoingReadings.bat = sendBAT;
+  // Send message via ESP-NOW
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &outgoingReadings, sizeof(outgoingReadings));
+  #ifdef debugESPNOW
+  if (result == ESP_OK) {
+    Serial.println("Sent with success");
+  } else Serial.println("Error sending the data");
+  #endif
+}
 
-  
+
+/*  
+ *  ESPNOW Callback when data is received
+ *  See walkthrough: https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
+ */
+void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+  memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
+  #ifdef debugESPNOW
+  Serial.print("Bytes received: ");
+  Serial.println(len);
+  #endif
+  incomingPSI = incomingReadings.psi;
+  incomingHP  = incomingReadings.btn;
+  incomingBAT = incomingReadings.bat;
+}
+
+
+/* 
+ *  ESPNOW Callback when data is sent
+ */
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  #ifdef debugESPNOW
+  Serial.print("\r\nLast Packet Send Status:\t");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+  if (status ==0){
+    success = "Delivery Success :)";
+  }
+  else{
+    success = "Delivery Fail :(";
+  }
+  #endif
+}
+
+void wificlient() {
+  #ifdef WIFIACCESSPOINT
+  WiFiClient client = server.available();   // listen for incoming clients
+  if (client) {                             // if you get a client,
+    Serial.println("New Client.");          // print a message out the serial port
+    String currentLine = "";                // make a String to hold incoming data from the client
+    if (client.connected()) {            // loop while the client's connected
+      if (client.available()) {             // if there's bytes to read from the client,
+        char c = client.read();             // read a byte, then
+        Serial.write(c);                    // print it out the serial monitor
+        if (c == '\n') {                    // if the byte is a newline character
+
+          // if the current line is blank, you got two newline characters in a row.
+          // that's the end of the client HTTP request, so send a response:
+          if (currentLine.length() == 0) {
+            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+            // and a content-type so the client knows what's coming, then a blank line:
+            client.println("HTTP/1.1 200 OK");
+            client.println("Content-type:text/html");
+            client.println();
+
+            // the content of the HTTP response follows the header:
+            client.print("Click <a href=\"/H\">here</a> to turn ON the LED.<br>");
+            client.print("Click <a href=\"/L\">here</a> to turn OFF the LED.<br>");
+
+            // The HTTP response ends with another blank line:
+            client.println();
+          } else {    // if you got a newline, then clear currentLine:
+            currentLine = "";
+          }
+        } else if (c != '\r') {  // if you got anything else but a carriage return character,
+          currentLine += c;      // add it to the end of the currentLine
+        }
+
+        // Check to see if the client request was "GET /H" or "GET /L":
+        if (currentLine.endsWith("GET /H")) {
+          digitalWrite(LED_BUILTIN, HIGH);               // GET /H turns the LED on
+        }
+        if (currentLine.endsWith("GET /L")) {
+          digitalWrite(LED_BUILTIN, LOW);                // GET /L turns the LED off
+        }
+      }
+    } else {
+        // close the connection:
+        client.stop();
+        Serial.println("Client Disconnected.");
+      }
+  }
+  #endif
+}
+
 void receiveRemote() {
   #ifdef MOVECONTROLLER
   if (driveController.isConnected()) {
@@ -413,8 +677,10 @@ void receiveRemote() {
       }else{
         sendTo32u4Data.flywheel = 0; 
       }
-      DEBUG_PRINT("Flywheel Enabled: ");
-      DEBUG_PRINTLN(sendTo32u4Data.flywheel);
+      #ifdef debugFlywheel
+        Serial.print("Flywheel Enabled: ");
+        Serial.println(sendTo32u4Data.flywheel);
+      #endif
     } 
     if(buttonsL.l1){
         sendTo32u4Data.flywheel = 0;
@@ -427,8 +693,10 @@ void receiveRemote() {
         }else{
           sendTo32u4Data.domeSpin = 0; 
         }
-        DEBUG_PRINT("Domespin Enabled: ");
-        DEBUG_PRINTLN(sendTo32u4Data.domeSpin);
+        #ifdef debugDomeSpin
+          Serial.print("Domespin Enabled: ");
+          Serial.println(sendTo32u4Data.domeSpin);
+        #endif
       }
 
     if(CHECK_BUTTON_PRESSEDR(l3)){
@@ -617,8 +885,10 @@ void drive_Movement(){
 }
 
 void sounds() {
-
-#ifdef MOVECONTROLLER //******Move Controller
+#ifdef MUSICPLAYER_FEATHERWING
+  if (musicPlayer.playingMusic) {
+    sendPSI = 1;
+  }
   if(buttonsL.circle == 1  && musicPlayer.stopped()){
   //if(musicPlayer.stopped()){
     musicPlayer.startPlayingFile(soundNames[i]);
@@ -630,7 +900,6 @@ void sounds() {
       i=0;
     }
   }
-  
   if(buttonsL.cross){
     musicPlayer.stopPlaying();
   }
@@ -691,7 +960,7 @@ void sounds() {
 
 void BatteryLevel(){
   Serial.print("Nav1 Controller battery level is: ");
-  switch (driveController.state.status.battery){
+  switch (driveController.state.status.battery) {
     case PSController::kHigh:
     Serial.println("High");
     break;
@@ -710,10 +979,40 @@ void BatteryLevel(){
     case PSController::kShutdown:
     Serial.println("Shutting Down");
     break;
+    default:
+    Serial.println("Checking...");
+    BatteryLevel();
+    break;
+  }
+  switch (driveController.state.status.battery) {
+    case PSController::kHigh:
+    Serial.println("High");
+    break;
+    case PSController::kFull:
+    Serial.println("High");
+    break;
+    case PSController::kCharging:
+    Serial.println("Charging");
+    break;
+    case PSController::kLow:
+    Serial.println("Low");
+    break;
+    case PSController::kDying:
+    Serial.println("Critical");
+    break;
+    case PSController::kShutdown:
+    Serial.println("Shutting Down");
+    break;
+    default:
+    Serial.println("Checking...");
+    BatteryLevel();
+    break;
   }
 }
 
-   //------------------ Battery -------------------------
+/*
+ * Battery Check Subroutine to check Move Controllers as they connect - displaying the battery status on Serial (will also display in web site)
+*/
 void batterycheck() {
   if (driveController.isConnected()) {
     if (driveController.state.status.battery == PSController::kCharging ) Serial.println("The drive controller battery charging");
@@ -745,64 +1044,59 @@ void batterycheck() {
 
 
 
-  void debugRoutines(){
-//
-//     #ifdef debugRemote
-//        
-//            SerialDebug.print(sendTo32u4Data.leftStickY); SerialDebug.print('\t');
-//            SerialDebug.print(sendTo32u4Data.leftStickX); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.rightStickY); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.rightStickX); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.l1); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.l2); SerialDebug.print('\t');
-//            SerialDebug.print(sendTo32u4Data.xboxL3); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.r1); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.r2); SerialDebug.print('\t');
-//            SerialDebug.print(sendTo32u4Data.xboxR3); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.a); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.b); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.x); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.y); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.up); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.down); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.left); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.right); SerialDebug.print('\t');
-//            SerialDebug.print(buttons.back); SerialDebug.print('\t');
-//            SerialDebug.print(enableDrive); SerialDebug.print('\t');
-//            SerialDebug.println(buttons.xbox); 
-//      #endif
+void debugRoutines(){
+#ifdef debugRemote
+  SerialDebug.print(sendTo32u4Data.leftStickY); SerialDebug.print('\t');
+  SerialDebug.print(sendTo32u4Data.leftStickX); SerialDebug.print('\t');
+  SerialDebug.print(buttons.rightStickY); SerialDebug.print('\t');
+  SerialDebug.print(buttons.rightStickX); SerialDebug.print('\t');
+  SerialDebug.print(buttons.l1); SerialDebug.print('\t');
+  SerialDebug.print(buttons.l2); SerialDebug.print('\t');
+  SerialDebug.print(sendTo32u4Data.xboxL3); SerialDebug.print('\t');
+  SerialDebug.print(buttons.r1); SerialDebug.print('\t');
+  SerialDebug.print(buttons.r2); SerialDebug.print('\t');
+  SerialDebug.print(sendTo32u4Data.xboxR3); SerialDebug.print('\t');
+  SerialDebug.print(buttons.a); SerialDebug.print('\t');
+  SerialDebug.print(buttons.b); SerialDebug.print('\t');
+  SerialDebug.print(buttons.x); SerialDebug.print('\t');
+  SerialDebug.print(buttons.y); SerialDebug.print('\t');
+  SerialDebug.print(buttons.up); SerialDebug.print('\t');
+  SerialDebug.print(buttons.down); SerialDebug.print('\t');
+  SerialDebug.print(buttons.left); SerialDebug.print('\t');
+  SerialDebug.print(buttons.right); SerialDebug.print('\t');
+  SerialDebug.print(buttons.back); SerialDebug.print('\t');
+  SerialDebug.print(enableDrive); SerialDebug.print('\t');
+  SerialDebug.println(buttons.xbox); 
+#endif
 
 //
-      #ifdef debugIMU
-            SerialDebug.print(receiveIMUData.pitch); SerialDebug.print('\t');
-            SerialDebug.println(receiveIMUData.roll);
+#ifdef debugIMU
+  SerialDebug.print("IMU Pitch: ");
+  SerialDebug.print(receiveIMUData.pitch); SerialDebug.print('\t');
+  SerialDebug.print("IMU Roll: "); SerialDebug.print('\t');
+  SerialDebug.println(receiveIMUData.roll);
+#endif
 
-      #endif
 
+#ifdef debugMainDrive
+  SerialDebug.print(F("In/Pitch (Input_Drive): ")); SerialDebug.print(Input_Drive); SerialDebug.print('\t'); 
+  SerialDebug.print(F("Set/Joy (Setpoint_Drive): ")); SerialDebug.print(Setpoint_Drive); SerialDebug.print('\t');
+  SerialDebug.print(F("Out (Output_Drive): ")); SerialDebug.print(Output_Drive); SerialDebug.print('\t');
+  SerialDebug.print(F("Cont. Conn. (controllerConnected): ")); SerialDebug.print(controllerConnected); SerialDebug.print('\t');
+  SerialDebug.print(F("En (enableDrive): ")); SerialDebug.println(enableDrive); 
+#endif
 
-//      #ifdef debugMainDrive
-//
-//            SerialDebug.print(F("In/Pitch: ")); SerialDebug.print(Input_Drive); SerialDebug.print('\t'); 
-//            SerialDebug.print(F("Set/Joy: ")); SerialDebug.print(Setpoint_Drive); SerialDebug.print('\t');
-//            SerialDebug.print(F("Out: ")); SerialDebug.print(Output_Drive); SerialDebug.print('\t');
-//            SerialDebug.print(F("Cont. Conn.: ")); SerialDebug.print(controllerConnected); SerialDebug.print('\t');
-//            SerialDebug.print(F("En: ")); SerialDebug.println(enableDrive); 
-//            
-//      #endif
-
-//      #ifdef debugS2S
-//
-//            SerialDebug.print(F("Servo: In/Roll: ")); SerialDebug.print(Input_S2S_Servo); SerialDebug.print('\t'); 
-//            SerialDebug.print(F("Set/Joy: ")); SerialDebug.print(Setpoint_S2S_Servo); SerialDebug.print('\t');
-//            SerialDebug.print(F("Out: ")); SerialDebug.print(Output_S2S_Servo); SerialDebug.print('\t');
-//            
-//            SerialDebug.print(F("Stab: In/Pot: ")); SerialDebug.print(Input_S2S_Stabilization); SerialDebug.print('\t'); 
-//            SerialDebug.print(F("Set/Servo Out: ")); SerialDebug.print(Output_S2S_Servo); SerialDebug.print('\t');
-//            SerialDebug.print(F("Out: ")); SerialDebug.print(Output_S2S_Stabilization); SerialDebug.print('\t');
-//            SerialDebug.print(F("Cont. Conn.: ")); SerialDebug.print(controllerConnected); SerialDebug.print('\t');
-//            SerialDebug.print(F("En: ")); SerialDebug.println(enableDrive); 
-//            
-//      #endif
+#ifdef debugS2S
+  SerialDebug.print(F("Servo: In/Roll: ")); SerialDebug.print(Input_S2S_Servo); SerialDebug.print('\t'); 
+  SerialDebug.print(F("Set/Joy: ")); SerialDebug.print(Setpoint_S2S_Servo); SerialDebug.print('\t');
+  SerialDebug.print(F("Out: ")); SerialDebug.print(Output_S2S_Servo); SerialDebug.print('\t');
+  
+  SerialDebug.print(F("Stab: In/Pot: ")); SerialDebug.print(Input_S2S_Stabilization); SerialDebug.print('\t'); 
+  SerialDebug.print(F("Set/Servo Out: ")); SerialDebug.print(Output_S2S_Servo); SerialDebug.print('\t');
+  SerialDebug.print(F("Out: ")); SerialDebug.print(Output_S2S_Stabilization); SerialDebug.print('\t');
+  SerialDebug.print(F("Cont. Conn.: ")); SerialDebug.print(controllerConnected); SerialDebug.print('\t');
+  SerialDebug.print(F("En: ")); SerialDebug.println(enableDrive); 
+#endif
 
      
      
