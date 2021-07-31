@@ -1,5 +1,5 @@
 /*
- * Joe's Drive  - V2 7/7/2021
+ * Joe's Drive  - V2 8/7/2021
  * Primary ESP32 HUZZAH32
  * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
  * You will need libraries: 
@@ -24,10 +24,9 @@
 //#define debugIMU
 //#define debugMainDrive
 //#define debugS2S
-#define debugSounds
+//#define debugSounds
 //#define debugESPNOW // Configure the system to display its wifi mac and bluetooth addresses for insert into Dome code.
-//#define debugdebugESPNOWConfig  // Configure the system to display its wifi mac and bluetooth addresses for insert into Body code.
-
+//#define getESPNOWMac  // Configure the system to display its wifi mac and bluetooth addresses for insert into Body code.
 
 /*
  * Controller Configurations
@@ -42,7 +41,7 @@
  * Used to enable or disable use of VS1053 Musicplayer Featherwing
 */
 
-#define MUSICPLAYER_FEATHERWING
+
 
 /*
  * Communication Functions of ESP32
@@ -51,8 +50,6 @@
 
 //#define WIFIACCESSPOINT  // BB8 Main Controls are exposed over a Wifi AccessPoint with its own network
 //#define BTSerialMode // Allow Main Controls exposed via BlueTooth alongside Controller support
-#define ESPNOW // Allow ESP communications over Wifi to Dome ESP32
-
 
 /*
  * MAC ADDRESS DEFINITIONS
@@ -68,17 +65,19 @@
  * PIN DEFINITIONS
 */
 
-#ifdef MOVECONTROLLER //If using a Move, PS3,4 or 5 controller joined to the ESP32
-#define NeoPixel_pin 27
-#define S2S_pwm 22  // SCL 22 and SDA 23
+#define S2S_pwm 33 //22  // SCL 22 and SDA 23
 #define S2S_pin_1 26 //A0
 #define S2S_pin_2 25 //A1
-#define Drive_pwm 23  // SCL 22 and SDA 23
-#define Drive_pin_1 4
-#define Drive_pin_2 21
+#define Drive_pwm 21
+#define Drive_pin_1 4 //A5
+#define Drive_pin_2 27
 #define S2SPot_pin A2 //GPIO 34
+#define flyWheelMotor_pwm 15
+#define flyWheelMotor_pin_A 32
+#define flyWheelMotor_pin_B 14
 #define S2S_offset -120
-#endif
+#define voltageSensor_Pin A3 //A4 or 13
+#define printMillis 5
 
 /*
  * Creates a WiFi access point and provides a web server on it.
@@ -114,7 +113,6 @@ WiFiServer server(80);
   bool connected;
 #endif
 
-#ifdef ESPNOW
 // Complete Instructions to Get and Change ESP MAC Address: https://RandomNerdTutorials.com/get-change-esp32-esp8266-mac-address-arduino/
 // As per the following walkthrough https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
 #include <esp_now.h>
@@ -125,7 +123,8 @@ uint8_t broadcastAddress[] = {0xF1, 0xFF, 0xF1, 0xFF, 0xFF, 0xFF};
 // Define variables to store incoming readings
 int incomingPSI = 0;
 byte incomingHP = 0;
-float incomingBAT = 0;      
+float incomingBAT = 0; 
+//int incomingDIS = 0;     
 
 // Define variables to store readings to be sent
 int sendPSI = 0;
@@ -141,14 +140,13 @@ typedef struct struct_message {
     int psi;
     byte btn;
     float bat;
+//    int dis;
 } struct_message;
 // Create a struct_message called outgoingReadings to hold sensor readings
 struct_message outgoingReadings;
 
 // Create a struct_message to hold incoming sensor readings
 struct_message incomingReadings;
-
-#endif
 
 
 /*
@@ -195,7 +193,7 @@ SDA - General purpose IO pin #23
  * clean
  * create partition primary
  * format fs=fat32 quick
- * 
+ *  NOTE; for the ESP32 HUZZAH you will need to download this version of the library: https://github.com/eziya/ESP32_ADAFRUIT_VS1053
  */
 #ifdef MUSICPLAYER_FEATHERWING
   #include <SD.h>
@@ -252,6 +250,7 @@ struct SEND_DATA_STRUCTURE_32u4{
   bool psiFlash;
   float pitch;
   float roll; 
+//  int8_t sound;
 };
 SEND_DATA_STRUCTURE_32u4 sendTo32u4Data;
 
@@ -259,7 +258,9 @@ SEND_DATA_STRUCTURE_32u4 sendTo32u4Data;
  * Create Receive from 32u4 Objects
 */
 struct RECEIVE_DATA_STRUCTURE_32u4 {
-  int16_t tiltAngle; 
+  int16_t tiltAngle;
+//  int8_t playingMusic;
+//  int8_t sendPSI; 
 };
 RECEIVE_DATA_STRUCTURE_32u4 receiveFrom32u4Data;
 
@@ -314,9 +315,12 @@ Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(VS1053_RESET
 
 #define SerialDebug Serial
 
-bool enableDrive,reverseDrive; 
+bool enableDrive,reverseDrive,batt_Voltage; 
 
-unsigned long currentMillis, IMUmillis, lastLoopMillis, lastDomeMillis, rec32u4Millis, lastPrintMillis; 
+float R1 = 30000.0; //30k
+float R2 = 7500.0; //7k5
+
+unsigned long currentMillis, receiveMillis, lastVSMillis, IMUmillis, lastServoUpdateMillis, lastLoopMillis, lastDomeMillis, rec32u4Millis, lastPrintMillis; 
 bool IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected; 
 //Define Variables we'll be connecting to
 double Setpoint_S2S_Servo, Input_S2S_Servo, Output_S2S_Servo;
@@ -324,14 +328,9 @@ double Setpoint_S2S_Stabilization, Input_S2S_Stabilization, Output_S2S_Stabiliza
 double Setpoint_Drive, Input_Drive, Output_Drive, Setpoint_Drive_In;
 
 #ifdef MUSICPLAYER_FEATHERWING
-int numberOfTracks = 55; 
+int numberOfTracks = 9; 
 int i; 
-char *soundNames[]={"ACK0000.ogg", "FUN0000.ogg",  "FUN0001.ogg",  "BEEP0000.ogg",  "ACK0001.ogg",  "BEEP0001.ogg",  "BEEP0002.ogg",  "BEEP0003.ogg",  "BEEP0004.ogg",  "BB80010.ogg",  
-"BB80011.ogg",  "BB80012.ogg",  "BB80013.ogg",  "BB80014.ogg",  "BB80015.ogg",  "BB80016.ogg",  "BB80017.ogg",  "BB80018.ogg",  "BB80019.ogg",  "BB80021.ogg",  
-"BB80022.ogg",  "BB80023.ogg",  "BB80024.ogg",  "BB80025.ogg",  "BB80026.ogg",  "BB80027.ogg",  "BB80028.ogg",  "BB80029.ogg",  "BB80030.ogg",  "BB80031.ogg",  "BB80032.ogg",  
-"BB80033.ogg",  "BB80034.ogg",  "BB80035.ogg",  "BB80036.ogg",  "BB80037.ogg",  "BB80038.ogg",  "BB80039.ogg",  "BB80040.ogg",  "BB80041.ogg",  "BB80042.ogg",  "BB80043.ogg",  
-"BB80044.ogg",  "BB80045.ogg",  "BB80046.ogg",  "BB80047.ogg",  "BB80048.ogg",  "BB80049.ogg",  "BB80050.ogg",  "BB80051.ogg",  "BB80052.ogg",  "BB80053.ogg",  "BB80054.ogg",  
-"BB80055.ogg",  "BB80056.ogg"};
+char *soundNames[]={"ACK0000.ogg", "FUN0000.ogg",  "FUN0001.ogg",  "BEEP0000.ogg",  "ACK0001.ogg",  "BEEP0001.ogg",  "BEEP0002.ogg",  "BEEP0003.ogg",  "BEEP0004.ogg"};
 #endif
 
   //Specify the links and initial tuning parameters
@@ -391,13 +390,12 @@ void setup() {
   SerialBT.connect();
 #endif
 
-#ifdef debugESPNOWConfig
+#ifdef getESPNOWMac
   WiFi.mode(WIFI_MODE_STA);
   Serial.print("Please write down the following WIFI MAC: ");
   Serial.println(WiFi.macAddress());
 #endif
 
-#ifdef ESPNOW
   WiFi.mode(WIFI_STA); // Set device as a Wi-Fi Station
   Serial.println("WIFI ESPNOW preparing...");
   // Init ESP-NOW
@@ -424,7 +422,6 @@ void setup() {
   
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(OnDataRecv);
-#endif
 
 #ifdef MOVECONTROLLER
   PSController::startListening(MasterNav);
@@ -439,8 +436,9 @@ void setup() {
      Serial.println(F("Couldn't find VS1053, do you have the right pins defined?"));
   } else {
       Serial.println(F("VS1053 found"));
-      musicPlayer.setVolume(1,1);
-      musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT);  // DREQ int
+      musicPlayer.setVolume(1,1); // Set volume for left, right channels. lower numbers == louder volume!
+//      musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT);  // DREQ int
+      musicPlayer.sineTest(0x44, 500);    // Make a tone to indicate VS1053 is working
    }
   
   if (!SD.begin(CARDCS)) {
@@ -495,26 +493,30 @@ void setup() {
   pinMode(Drive_pwm, OUTPUT);  // Speed of Motor2 on Motor Driver 2 
   pinMode(Drive_pin_1, OUTPUT);  // Direction
   pinMode(Drive_pin_2, OUTPUT);
-
+  pinMode(flyWheelMotor_pwm, OUTPUT);  // Speed of Motor1 on Motor Driver 2 
+  pinMode(flyWheelMotor_pin_A, OUTPUT);  // Direction
+  pinMode(flyWheelMotor_pin_B, OUTPUT);
+  
 }
 
 void loop() {
   currentMillis = millis(); 
   receiveIMU();
-  if(currentMillis - lastLoopMillis >= 10) {
-    lastLoopMillis = currentMillis; 
+//  if(currentMillis - lastLoopMillis >= 10) {
+//    lastLoopMillis = currentMillis; 
     wificlient();
     sendReadings();
     receiveRemote();
-    S2S_Movement(); 
-    drive_Movement(); 
+//    S2S_Movement(); 
+//    drive_Movement();
+    drive_Movement_test(); 
     sendDataTo32u4();
-    sounds(); 
+    Timechecks();
     if(currentMillis - lastPrintMillis >= 70) {
       lastPrintMillis = currentMillis;
       debugRoutines();
     }
-  }
+//  }
 }
 
 /*  
@@ -549,6 +551,7 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   incomingPSI = incomingReadings.psi;
   incomingHP  = incomingReadings.btn;
   incomingBAT = incomingReadings.bat;
+//  incomingDIS = incomingReadings.dis;
 }
 
 
@@ -757,7 +760,14 @@ void receiveRemote() {
 #endif
 
 }
-  
+
+void readBatteryVoltage() {    // read the value at analog input
+  batt_Voltage = (((analogRead(voltageSensor_Pin)) * 3.28) / 1024.0) / (R2/(R1+R2));
+  #ifdef debugVS
+    Serial.print(F("Battery Voltage: ")); Serial.println(batt_Voltage); 
+  #endif
+}
+
 void receiveIMU(){
   if (IMUconnected) {
     if(recIMU.receiveData()){
@@ -800,7 +810,79 @@ void sendDataTo32u4(){
    }       
 }
 
+void sounds() {
+//  if (receiveFrom32u4Data.playingMusic = 1) {
+//    sendPSI = 1;
+//  } else {
+//    sendPSI = 0;
+//  }
+//  if(buttonsL.circle){
+//    sendTo32u4Data.sound = 1;
+//  }
+//  if(buttonsL.cross){
+//    sendTo32u4Data.sound = 0;
+//  }
+//  if(buttonsL.l1){
+//    if(buttonsL.l2){
+//      if(buttonsL.up){
+//        sendTo32u4Data.sound = 20;
+//      } else if(buttonsL.right){
+//        sendTo32u4Data.sound = 21;
+//      } else if(buttonsL.down){
+//        sendTo32u4Data.sound = 22;
+//      } else if(buttonsL.left){
+//        sendTo32u4Data.sound = 23;
+//      } else if (buttonsR.up){
+//        sendTo32u4Data.sound = 24;
+//      } else if(buttonsR.right){
+//        sendTo32u4Data.sound = 25;
+//      } else if(buttonsR.down){
+//        sendTo32u4Data.sound = 26;
+//      } else if(buttonsR.left){
+//        sendTo32u4Data.sound = 27;
+//      }
+//    }
+//    if(buttonsL.up){
+//      sendTo32u4Data.sound = 10;
+//    } else if(buttonsL.right){
+//      sendTo32u4Data.sound = 11;
+//    } else if(buttonsL.down){
+//      sendTo32u4Data.sound = 12;
+//    } else if(buttonsL.left){
+//      sendTo32u4Data.sound = 13;
+//    } else if (buttonsR.up){
+//      sendTo32u4Data.sound = 14;
+//    } else if(buttonsR.right){
+//      sendTo32u4Data.sound = 15;
+//    } else if(buttonsR.down){
+//      sendTo32u4Data.sound = 16;
+//    } else if(buttonsR.left){
+//      sendTo32u4Data.sound = 17;
+//    }
+//  }
+//#ifdef debugSounds 
+//  SerialDebug.print("Playing Track: "); SerialDebug.println(sendTo32u4Data.sound); 
+//#endif
+//#ifdef debugSounds 
+//  SerialDebug.print("PSI State: "); SerialDebug.println(sendPSI); 
+//#endif
 
+}
+
+void spinFlywheel() {
+  if (sendTo32u4Data.flywheel > 1 && sendTo32u4Data.driveEnabled) {
+    digitalWrite(flyWheelMotor_pin_A, LOW);
+    digitalWrite(flyWheelMotor_pin_B, HIGH); // Motor 1 Forward
+    analogWrite(flyWheelMotor_pwm,map(sendTo32u4Data.flywheel,1,100,0,255));
+  } else if (sendTo32u4Data.flywheel < -1 && sendTo32u4Data.driveEnabled) {
+    digitalWrite(flyWheelMotor_pin_A, HIGH);
+    digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Backward
+    analogWrite(flyWheelMotor_pwm,map(sendTo32u4Data.flywheel,-100,-1,255,0));
+  } else {
+    digitalWrite(flyWheelMotor_pin_A, LOW);
+    digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Stopped
+  }
+}
 
 void S2S_Movement(){
 //  Using the DFRobot Motor Driver we need 3 pins
@@ -884,82 +966,25 @@ void drive_Movement(){
 
 }
 
-void sounds() {
-#ifdef MUSICPLAYER_FEATHERWING
-  if (musicPlayer.playingMusic) {
-    sendPSI = 1;
-  }
-  if(buttonsL.circle == 1  && musicPlayer.stopped()){
-  //if(musicPlayer.stopped()){
-    musicPlayer.startPlayingFile(soundNames[i]);
-    #ifdef debugSounds 
-        SerialDebug.print("Playing Track: "); SerialDebug.println(soundNames[i]); 
-    #endif
-    i++;
-    if(i >= numberOfTracks){
-      i=0;
-    }
-  }
-  if(buttonsL.cross){
-    musicPlayer.stopPlaying();
-  }
-  if(buttonsL.l1){
-    if(buttonsL.up){
-      #ifdef debugSounds 
-      SerialDebug.print("Playing Track: "); 
-      SerialDebug.println("ACK0000.ogg"); 
-      #endif
-      musicPlayer.startPlayingFile("ACK0000.ogg");  //Play Acknowlege 0000
-    } else if(buttonsL.right){
-      #ifdef debugSounds 
-      SerialDebug.print("Playing Track: "); 
-      SerialDebug.println("ACK0001.ogg"); 
-      #endif
-      musicPlayer.startPlayingFile("ACK0001.ogg");  //Play Acknowlege 0001
-    } else if(buttonsL.down){
-      #ifdef debugSounds 
-      SerialDebug.print("Playing Track: "); 
-      SerialDebug.println("ACK0002.ogg"); 
-      #endif
-      musicPlayer.startPlayingFile("ACK0002.ogg");  //Play Acknowlege 0002
-    } else if(buttonsL.left){
-      #ifdef debugSounds 
-      SerialDebug.print("Playing Track: "); 
-      SerialDebug.println("ACK0003.ogg"); 
-      #endif
-      musicPlayer.startPlayingFile("ACK0003.ogg");  //Play Acknowlege 0003
-    } else if (buttonsR.up){
-      #ifdef debugSounds 
-      SerialDebug.print("Playing Track: "); 
-      SerialDebug.println("FUN0000.ogg"); 
-      #endif
-      musicPlayer.startPlayingFile("FUN0000.ogg");  //Play Acknowlege 0000
-    } else if(buttonsR.right){
-      #ifdef debugSounds 
-      SerialDebug.print("Playing Track: "); 
-      SerialDebug.println("FUN0001.ogg"); 
-      #endif
-      musicPlayer.startPlayingFile("FUN0001.ogg");  //Play Acknowlege 0001
-    } else if(buttonsR.down){
-      #ifdef debugSounds 
-      SerialDebug.print("Playing Track: "); 
-      SerialDebug.println("FUN0002.ogg"); 
-      #endif
-      musicPlayer.startPlayingFile("FUN0002.ogg");  //Play Acknowlege 0002
-    } else if(buttonsR.left){
-      #ifdef debugSounds 
-      SerialDebug.print("Playing Track: "); 
-      SerialDebug.println("FUN0003.ogg"); 
-      #endif
-      musicPlayer.startPlayingFile("FUN0003.ogg");  //Play Acknowlege 0003
-    }
-  }
-#endif
+void drive_Movement_test(){
+//  Using the DFRobot Motor Driver we need 3 pins
+//  VCC and GND to power the driver logic
+//  First pin is PWM for speed control 0 - 255
+//  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop
 
+    digitalWrite(Drive_pin_1, LOW);
+    digitalWrite(Drive_pin_2, HIGH); // Motor 2 Forward
+    analogWrite(Drive_pwm, 255);
+    delay(5000);  
+    digitalWrite(Drive_pin_1, LOW);
+    digitalWrite(Drive_pin_2, HIGH); // Motor 2 Forward
+    analogWrite(Drive_pwm, 120);
+    delay(5000);  
+    digitalWrite(Drive_pin_1, LOW);
+    digitalWrite(Drive_pin_2, LOW); // Motor 2 stopped
 }
 
 void BatteryLevel(){
-  Serial.print("Nav1 Controller battery level is: ");
   switch (driveController.state.status.battery) {
     case PSController::kHigh:
     Serial.println("High");
@@ -980,7 +1005,6 @@ void BatteryLevel(){
     Serial.println("Shutting Down");
     break;
     default:
-    Serial.println("Checking...");
     BatteryLevel();
     break;
   }
@@ -1004,7 +1028,6 @@ void BatteryLevel(){
     Serial.println("Shutting Down");
     break;
     default:
-    Serial.println("Checking...");
     BatteryLevel();
     break;
   }
@@ -1015,34 +1038,76 @@ void BatteryLevel(){
 */
 void batterycheck() {
   if (driveController.isConnected()) {
-    if (driveController.state.status.battery == PSController::kCharging ) Serial.println("The drive controller battery charging");
-    else if (driveController.state.status.battery == PSController::kFull ) Serial.println("The drive controller battery charge is FULL");
-    else if (driveController.state.status.battery == PSController::kHigh ) Serial.println("The drive controller battery charge is HIGH");
-    else if (driveController.state.status.battery == PSController::kLow ) Serial.println("The drive controller battery charge is LOW");
-    else if (driveController.state.status.battery == PSController::kDying ) Serial.println("The drive controller battery charge is DYING");
-    else if (driveController.state.status.battery == PSController::kShutdown ) Serial.println("The drive controller battery charge is SHUTDOWN");
-    else {
-      Serial.print("The drive controller battery charge is UNDEFINED ");
-      Serial.println(driveController.state.status.battery);
-      batterycheck();
+    Serial.print("The Drive Controller battery level is: ");
+    switch (driveController.state.status.battery) {
+      case PSController::kHigh:
+      Serial.println("High");
+      break;
+      case PSController::kFull:
+      Serial.println("High");
+      break;
+      case PSController::kCharging:
+      Serial.println("Charging");
+      break;
+      case PSController::kLow:
+      Serial.println("Low");
+      break;
+      case PSController::kDying:
+      Serial.println("Critical");
+      break;
+      case PSController::kShutdown:
+      Serial.println("Shutting Down");
+      break;
+      default:
+      Serial.println("Checking...");
+//      BatteryLevel();
+      break;
     }
   }
-    if (domeController.isConnected()) {
-    if (domeController.state.status.battery == PSController::kCharging ) Serial.println("The dome controller battery charging");
-    else if (domeController.state.status.battery == PSController::kFull ) Serial.println("The dome controller battery charge is FULL");
-    else if (domeController.state.status.battery == PSController::kHigh ) Serial.println("The dome controller battery charge is HIGH");
-    else if (domeController.state.status.battery == PSController::kLow ) Serial.println("The dome controller battery charge is LOW");
-    else if (domeController.state.status.battery == PSController::kDying ) Serial.println("The dome controller battery charge is DYING");
-    else if (domeController.state.status.battery == PSController::kShutdown ) Serial.println("The dome controller battery charge is SHUTDOWN");
-    else {
-      Serial.print("The dome controller battery charge is UNDEFINED ");
-      Serial.println(domeController.state.status.battery);
-      batterycheck();
+  if (domeController.isConnected()) {
+  Serial.print("The Dome Controller battery level is: ");
+    switch (driveController.state.status.battery) {
+      case PSController::kHigh:
+      Serial.println("High");
+      break;
+      case PSController::kFull:
+      Serial.println("High");
+      break;
+      case PSController::kCharging:
+      Serial.println("Charging");
+      break;
+      case PSController::kLow:
+      Serial.println("Low");
+      break;
+      case PSController::kDying:
+      Serial.println("Critical");
+      break;
+      case PSController::kShutdown:
+      Serial.println("Shutting Down");
+      break;
+      default:
+      Serial.println("Checking...");
+//      BatteryLevel();
+      break;
     }
   }
 }
 
-
+void Timechecks() {
+  currentMillis = millis();
+  receiveMillis = currentMillis;
+  if (currentMillis - lastPrintMillis >= printMillis) { // Check for last debug print, if past, print debugs if enabled.
+    lastPrintMillis = currentMillis;
+    debugRoutines();
+  }
+  if (currentMillis - lastVSMillis > 10000) { // Check for last voltage check of 10secs, then check again.
+    lastVSMillis = currentMillis; 
+    readBatteryVoltage();
+  }
+  if (currentMillis - receiveMillis >= 250 && enableDrive) {  // Check for delays in recieving ESP32 data, if so disable the drives automatically.
+    enableDrive = !enableDrive; 
+  }
+}
 
 void debugRoutines(){
 #ifdef debugRemote
@@ -1101,4 +1166,4 @@ void debugRoutines(){
      
      
   
-  }
+}
