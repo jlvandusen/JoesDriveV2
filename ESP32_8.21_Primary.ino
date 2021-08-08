@@ -1,5 +1,5 @@
 /*
- * Joe's Drive  - V2 8/7/2021
+ * Joe's Drive  - V2 9/2021
  * Primary ESP32 HUZZAH32
  * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
  * You will need libraries: 
@@ -7,7 +7,7 @@
  * ESp32 Libraries: https://learn.adafruit.com/adafruit-huzzah32-esp32-feather/pinouts?view=all#using-with-arduino-ide
  * Adafruit VS1053 Featherwing MusicPlayer: https://github.com/adafruit/Adafruit_VS1053_Library
  * Utilizes ESP32NOW technology over WiFi to talk between Dome and Body - need to capture the Wifi MAC during bootup.
- * replace this with the mac of dome uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+ * On Line 117 - replace this with the mac of dome uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 */
 
 /*
@@ -20,13 +20,35 @@
 //#define debugDome // Validate and feedback what is being received from Dome (PSI, HP and Bat)
 //#define debugDomeSpin
 //#define debugFlywheel
+//#define testFlywheel
 //#define debugRemote
 //#define debugIMU
 //#define debugMainDrive
+//#define testMainDrive
 //#define debugS2S
+//#define debugS2SPot
+//#define testS2S
 //#define debugSounds
 //#define debugESPNOW // Configure the system to display its wifi mac and bluetooth addresses for insert into Dome code.
 //#define getESPNOWMac  // Configure the system to display its wifi mac and bluetooth addresses for insert into Body code.
+
+/*
+ * Do we need an additional Serial to perform debugging?
+*/
+
+#ifdef debugSerial
+  #include <SoftwareSerial.h>
+  #define SERIAL3_BAUD_RATE 115200
+  #define SERIAL3_RX_PIN 22
+  #define SERIAL3_TX_PIN 23
+  SoftwareSerial Serial3;
+#endif
+
+/*
+ * Define which Serial will be used for all debug feedback (use Serial3 for validation onces connected)
+ * 
+ */
+#define SerialDebug Serial
 
 /*
  * Controller Configurations
@@ -37,15 +59,8 @@
 //#define XBOXCONTROLLER
 
 /*
- * Music Controller
- * Used to enable or disable use of VS1053 Musicplayer Featherwing
-*/
-
-
-
-/*
  * Communication Functions of ESP32
- * Used to enable or disable use of communication methods to ESP32, can you multiple
+ * Used to enable or disable use of communication methods to ESP32, can use multiple
 */
 
 //#define WIFIACCESSPOINT  // BB8 Main Controls are exposed over a Wifi AccessPoint with its own network
@@ -120,33 +135,6 @@ WiFiServer server(80);
 // broadcastAddress REPLACE WITH THE MAC Address of your receiver - the other ESP32 in BB8 Dome (loopback {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};)
 uint8_t broadcastAddress[] = {0xF1, 0xFF, 0xF1, 0xFF, 0xFF, 0xFF};
 
-// Define variables to store incoming readings
-int incomingPSI = 0;
-byte incomingHP = 0;
-float incomingBAT = 0; 
-//int incomingDIS = 0;     
-
-// Define variables to store readings to be sent
-int sendPSI = 0;
-byte sendBTN = 0;
-float sendBAT = 0;    
-
-// Variable to store if sending data was successful
-String success;
-
-// Structure to send data
-// Must match the receiver structure
-typedef struct struct_message {
-    int psi;
-    byte btn;
-    float bat;
-//    int dis;
-} struct_message;
-// Create a struct_message called outgoingReadings to hold sensor readings
-struct_message outgoingReadings;
-
-// Create a struct_message to hold incoming sensor readings
-struct_message incomingReadings;
 
 
 /*
@@ -167,12 +155,11 @@ SDA - General purpose IO pin #23
 /*
  * LIBRARY DEFINITIONS
 */
-//#ifdef XBOXCONTROLLER
-//#include <XBOXRECV.h>
-//#endif
+#ifdef XBOXCONTROLLER
+#include <XBOXRECV.h>
+#endif
 
 #ifdef MOVECONTROLLER
-#include <analogWrite.h>
 #include <PSController.h>
 #define DRIVE_CONTROLLER_MAC  nullptr
 #define DOME_CONTROLLER_MAC nullptr
@@ -180,6 +167,7 @@ SDA - General purpose IO pin #23
 
 #include <Arduino.h>
 #include <EasyTransfer.h>
+#include <analogWrite.h>
 #include <Wire.h>
 #include <SPI.h>
 
@@ -195,10 +183,7 @@ SDA - General purpose IO pin #23
  * format fs=fat32 quick
  *  NOTE; for the ESP32 HUZZAH you will need to download this version of the library: https://github.com/eziya/ESP32_ADAFRUIT_VS1053
  */
-#ifdef MUSICPLAYER_FEATHERWING
-  #include <SD.h>
-  #include <Adafruit_VS1053.h>
-#endif
+
 
 #include <PID_v1.h>
 //#include "wiring_private.h" // pinPeripheral() function
@@ -224,6 +209,7 @@ EasyTransfer recIMU;
 EasyTransfer send32u4;
 EasyTransfer rec32u4; 
 
+
 /*
  * Create receive IMU from Trinket M0 Objects
 */
@@ -245,8 +231,6 @@ struct SEND_DATA_STRUCTURE_32u4{
   bool moveps; // xboxR3 equivilent
   int8_t leftStickX;
   int8_t leftStickY;
-//  int8_t rightStickX;
-//  int8_t rightStickY;
   bool psiFlash;
   float pitch;
   float roll; 
@@ -263,6 +247,37 @@ struct RECEIVE_DATA_STRUCTURE_32u4 {
 //  int8_t sendPSI; 
 };
 RECEIVE_DATA_STRUCTURE_32u4 receiveFrom32u4Data;
+
+
+
+// Define variables to store incoming readings
+int incomingPSI = 0;
+byte incomingHP = 0;
+float incomingBAT = 0; 
+//int incomingDIS = 0;     
+
+// Define variables to store readings to be sent
+int sendPSI = 0;
+byte sendBTN = 0;
+float sendBAT = 0;    
+
+// Variable to store if sending data was successful
+String success;
+
+
+// Structure to send data
+// Must match the receiver structure
+typedef struct struct_message {
+    int psi;
+    byte btn;
+    float bat;
+//    int dis;
+} struct_message;
+// Create a struct_message called outgoingReadings to hold sensor readings
+struct_message outgoingReadings;
+
+// Create a struct_message to hold incoming sensor readings
+struct_message incomingReadings;
 
 //#ifdef XBOXCONTROLLER
 //struct controllerButtons{
@@ -286,73 +301,68 @@ controllerButtonsR buttonsR;
 int8_t joystickDeadZoneRange = 25;  // For controllers that centering problems, use the lowest number with no drift
 #endif
 
-#ifdef MUSICPLAYER_FEATHERWING
-#define VS1053_RESET   -1     // VS1053 reset pin (not used!)
-#define VS1053_CS      32     // VS1053 chip select pin (output)
-#define VS1053_DCS     33     // VS1053 Data/command select pin (output)
-#define CARDCS         14     // Card chip select pin
-// DREQ should be an Int pin *if possible* (not possible on 32u4)
-#define VS1053_DREQ    15     // VS1053 Data request, ideally an Interrupt pin
-Adafruit_VS1053_FilePlayer musicPlayer = Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
-#endif
-
+/*
+ * DEFINE SERIAL 2 used for Communication to 32u4 feather
+ */
+ 
 #define SERIAL2_BAUD_RATE 74880
 #define SERIAL2_RX_PIN 27
 #define SERIAL2_TX_PIN 12
 
-/*
- * Do we need an additional Serial to perform debugging?
-*/
-#ifdef debugSerial
-  #include <SoftwareSerial.h>
-  #define SERIAL3_BAUD_RATE 74880
-  #define SERIAL3_RX_PIN 21
-  #define SERIAL3_TX_PIN 20
-  SoftwareSerial Serial3;
-#endif
-
-
-
-#define SerialDebug Serial
-
-bool enableDrive,reverseDrive,batt_Voltage; 
+bool enableDrive,reverseDrive,batt_Voltage,moveps; 
 
 float R1 = 30000.0; //30k
 float R2 = 7500.0; //7k5
 
+//Define Variables we'll be connecting to
 unsigned long currentMillis, receiveMillis, lastVSMillis, IMUmillis, lastServoUpdateMillis, lastLoopMillis, lastDomeMillis, rec32u4Millis, lastPrintMillis; 
 bool IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected; 
-//Define Variables we'll be connecting to
-double Setpoint_S2S_Servo, Input_S2S_Servo, Output_S2S_Servo;
-double Setpoint_S2S_Stabilization, Input_S2S_Stabilization, Output_S2S_Stabilization;
-double Setpoint_Drive, Input_Drive, Output_Drive, Setpoint_Drive_In;
-
+bool enabledDrive, autoDisableDoubleCheck, autoDisable, autoDisableState;
+unsigned long autoDisableMotorsMillis, autoDisableDoubleCheckMillis;
+float pitch, roll; 
+  
 #ifdef MUSICPLAYER_FEATHERWING
 int numberOfTracks = 9; 
 int i; 
 char *soundNames[]={"ACK0000.ogg", "FUN0000.ogg",  "FUN0001.ogg",  "BEEP0000.ogg",  "ACK0001.ogg",  "BEEP0001.ogg",  "BEEP0002.ogg",  "BEEP0003.ogg",  "BEEP0004.ogg"};
 #endif
 
-  //Specify the links and initial tuning parameters
-double Kp_S2S_Servo=.5, Ki_S2S_Servo=0, Kd_S2S_Servo=0;
+/*
+ * Create PID tuning configuraitons for the S2S, Main Drive
+*/
+
+//Specify PID and initial tuning parameters for S2S (Side to Side)
+//double Kp_S2S_Servo=.5, Ki_S2S_Servo=0, Kd_S2S_Servo=0;
+double Kp_S2S_Servo=10, Ki_S2S_Servo=0, Kd_S2S_Servo=0;
+double Setpoint_S2S_Servo, Input_S2S_Servo, Output_S2S_Servo;
 PID myPID_S2S_Servo(&Input_S2S_Servo, &Output_S2S_Servo, &Setpoint_S2S_Servo, Kp_S2S_Servo, Ki_S2S_Servo, Kd_S2S_Servo, DIRECT);
 
-  //Specify the links and initial tuning parameters
-double Kp_S2S_Stabilization=10, Ki_S2S_Stabilization=0, Kd_S2S_Stabilization=0;
+//Specify PID and initial tuning parameters for S2S (Side to Side) Stabalization
+//double Kp_S2S_Stabilization=10, Ki_S2S_Stabilization=0, Kd_S2S_Stabilization=0;
+double Kp_S2S_Stabilization=.5, Ki_S2S_Stabilization=0, Kd_S2S_Stabilization=.01;
+double Input_S2S_Stabilization, Output_S2S_Stabilization, Setpoint_S2S_Stabilization;
 PID myPID_S2S_Stabilization(&Input_S2S_Stabilization, &Output_S2S_Stabilization, &Setpoint_S2S_Stabilization, Kp_S2S_Stabilization, Ki_S2S_Stabilization, Kd_S2S_Stabilization, DIRECT);
 
-  //Specify the links and initial tuning parameters
+//Specify PID and initial tuning parameters for Drive (Drive)
 double Kp_Drive=4, Ki_Drive=0, Kd_Drive=0;
+double Setpoint_Drive, Input_Drive, Output_Drive, Setpoint_Drive_In;
 PID myPID_Drive(&Input_Drive, &Output_Drive, &Setpoint_Drive, Kp_Drive, Ki_Drive, Kd_Drive, DIRECT);
 
-bool enabledDrive;
-  
+//Specify PID and initial tuning parameters for Drive (Drive) Stabalization
+double Kp_Drive_Stabilization=.5, Ki_Drive_Stabilization=0, Kd_Drive_Stabilization=0;
+double Input_Drive_Stabilization, Output_Drive_Stabilization, Setpoint_Drive_Stabilization;
+PID myPID_Drive_Stabilization(&Input_Drive_Stabilization, &Output_Drive_Stabilization, &Setpoint_Drive_Stabilization, Kp_Drive_Stabilization, Ki_Drive_Stabilization, Kd_Drive_Stabilization, DIRECT);
+
+
+
 void setup() {
   currentMillis = millis();
   Serial.begin(115200);
   Serial1.begin(115200);
   Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN);
-//  Serial3.begin(SERIAL3_BAUD_RATE, SWSERIAL_8N1, SERIAL3_RX_PIN, SERIAL3_TX_PIN,false,256);
+#ifdef debugSerial
+  Serial3.begin(SERIAL3_BAUD_RATE, SWSERIAL_8N1, SERIAL3_RX_PIN, SERIAL3_TX_PIN,false,256);
+#endif
   delay(1000);
 
 #ifdef WIFIACCESSPOINT
@@ -446,6 +456,10 @@ void setup() {
   } else Serial.println("SD OK!");
 #endif
 
+/*
+ * PID Control elements setup and enablement
+*/
+
   myPID_S2S_Servo.SetMode(AUTOMATIC);
   myPID_S2S_Servo.SetOutputLimits(-255, 255);
   
@@ -455,36 +469,16 @@ void setup() {
   myPID_Drive.SetMode(AUTOMATIC);
   myPID_Drive.SetOutputLimits(-255, 255);
 
+  myPID_Drive_Stabilization.SetMode(AUTOMATIC);
+  myPID_Drive_Stabilization.SetOutputLimits(-255, 255);
+
   recIMU.begin(details(receiveIMUData), &Serial1); 
   rec32u4.begin(details(receiveFrom32u4Data), &Serial2);
   send32u4.begin(details(sendTo32u4Data), &Serial2);
 
 // Lets do some spot checks on the connections to other chips/CPUs
-   if(!rec32u4.receiveData()){
-        feather2Connected = false; 
-        Serial.println("32u4 Not Connected");
-   } else {
-      if(feather2Connected == false){
-        rec32u4Millis = currentMillis;
-        feather2Connected = true;
-        Serial.println("32u4 Connected");
-      }
-    }
-  if(!recIMU.receiveData()){
-    IMUmillis = currentMillis; 
-    IMUconnected = false; 
-    Serial.println("IMU Not Connected");
-  } else {
-    if(IMUconnected == false){
-      IMUmillis = currentMillis;
-      IMUconnected = true;
-      Serial.println("IMU Connected");
-    }
-    if((currentMillis - IMUmillis) > 25) {
-      IMUconnected = false; 
-      Serial.println("IMU Not Connected");
-    }
-  }
+  checkIMU();
+  check32u4();
 
   /* Set the pins to correct method for use for the DFRobot Motor Driver */
   pinMode(S2S_pwm, OUTPUT);  // Speed Of Motor2 on Motor Driver 1 
@@ -507,9 +501,9 @@ void loop() {
     wificlient();
     sendReadings();
     receiveRemote();
-//    S2S_Movement(); 
-//    drive_Movement();
-    drive_Movement_test(); 
+    S2S_Movement(); 
+    drive_Movement();
+
     sendDataTo32u4();
     Timechecks();
     if(currentMillis - lastPrintMillis >= 70) {
@@ -624,6 +618,7 @@ void wificlient() {
 
 void receiveRemote() {
   #ifdef MOVECONTROLLER
+  autoDisableMotors();
   if (driveController.isConnected()) {
     if (!drivecontrollerConnected){ // notify us of the connection as long as the status is false
       Serial.println("We have our Drive Nav Controller");
@@ -702,7 +697,7 @@ void receiveRemote() {
         #endif
       }
 
-    if(CHECK_BUTTON_PRESSEDR(l3)){
+    if(CHECK_BUTTON_PRESSEDR(l3)){ // Check to see if the drive L3 joy was pushed in
       if (enableDrive == false) {
         enableDrive = true;
         DEBUG_PRINTLN("Drive Enabled");
@@ -714,7 +709,7 @@ void receiveRemote() {
       }
       sendTo32u4Data.driveEnabled = enableDrive; 
     }
-    if(CHECK_BUTTON_PRESSEDL(l3)){
+    if(CHECK_BUTTON_PRESSEDL(l3)){ // Check to see if the dome L3 joy was pushed in
       if (reverseDrive == false) {
         reverseDrive = true;
         DEBUG_PRINTLN("Drive Reversed");
@@ -723,6 +718,16 @@ void receiveRemote() {
         DEBUG_PRINTLN("Drive Forward");
       }
       sendTo32u4Data.moveL3 = reverseDrive; 
+    }
+    if(CHECK_BUTTON_PRESSEDR(ps)){ // Check to see if the drive PS Button was pushed
+      if (moveps == false) {
+        moveps = true;
+        DEBUG_PRINTLN("Dome Positional Mode Enabled");
+      } else {
+        moveps = false; 
+        DEBUG_PRINTLN("Dome Positional Mode Disabled");
+      }
+      sendTo32u4Data.moveps = moveps; 
     }
     if((buttonsL.leftStickX < -(joystickDeadZoneRange)) || (buttonsL.leftStickX > (joystickDeadZoneRange))){
 //      sendTo32u4Data.leftStickX = constrain(map((buttonsL.leftStickX),-128,128,0,100),0,100); 
@@ -764,50 +769,80 @@ void receiveRemote() {
 void readBatteryVoltage() {    // read the value at analog input
   batt_Voltage = (((analogRead(voltageSensor_Pin)) * 3.28) / 1024.0) / (R2/(R1+R2));
   #ifdef debugVS
-    Serial.print(F("Battery Voltage: ")); Serial.println(batt_Voltage); 
+    DEBUG_PRINT(F("Battery Voltage: ")); Serial.println(batt_Voltage); 
   #endif
 }
 
+void checkIMU(){
+  if(recIMU.receiveData()){
+    IMUmillis = currentMillis; 
+    IMUconnected = true;
+    SerialDebug.println("IMU Is Connected...");
+  } else SerialDebug.println("IMU Is NOT Connected...");
+//  if(millis() - IMUmillis >= 500){
+//    IMUconnected = true;
+//    
+//  } else {
+//      if(IMUconnected == true) {
+//        IMUconnected = false;
+//       
+//      }
+//    }
+}
+
+void check32u4(){
+  if(rec32u4.receiveData()){
+    rec32u4Millis = currentMillis; 
+    feather2Connected = true;
+    SerialDebug.println("32u4 Is Connected...");
+  } else SerialDebug.println("32u4 Is NOT Connected...");
+//  if(millis() - rec32u4Millis >= 500){
+//    feather2Connected = true;
+//    
+//  } else {
+//      if(feather2Connected == true) {
+//        feather2Connected = false;
+//        
+//      }
+//    }
+}
+
 void receiveIMU(){
-  if (IMUconnected) {
-    if(recIMU.receiveData()){
-     IMUmillis = currentMillis; 
-     sendTo32u4Data.roll = receiveIMUData.roll;
-     sendTo32u4Data.pitch = receiveIMUData.pitch;
-     DEBUG_PRINT("IMU ROLL: ");
-     DEBUG_PRINT(receiveIMUData.roll);
-     DEBUG_PRINT(" IMU PITCH: ");
-     DEBUG_PRINT(receiveIMUData.pitch);
-      if(IMUconnected == false) {
-        IMUconnected = true;
-        DEBUG_PRINTLN("IMU Connected");
-      }
-      else if((currentMillis - IMUmillis) > 25) {
-        IMUconnected = false; 
-        DEBUG_PRINTLN("IMU Not Connected");
-      }
-    } else {
-        IMUconnected = false; 
-    }
+  if(recIMU.receiveData()){
+    IMUmillis = currentMillis; 
+    IMUconnected = true;
+
+    roll = receiveIMUData.roll;
+    pitch = receiveIMUData.pitch;
+    sendTo32u4Data.roll = roll;
+    sendTo32u4Data.pitch = pitch;
+    
+    #ifdef debugIMU
+      DEBUG_PRINT("IMU PITCH: ");
+      DEBUG_PRINT(receiveIMUData.pitch);
+      DEBUG_PRINT(" IMU ROLL: ");
+      DEBUG_PRINTLN(receiveIMUData.roll);
+      DEBUG_PRINT("32u4 PITCH: ");
+      DEBUG_PRINT(sendTo32u4Data.pitch);
+      DEBUG_PRINT(" 32u4 ROLL: ");
+      DEBUG_PRINTLN(sendTo32u4Data.roll);
+    #endif
   }
+  if(millis() - IMUmillis >= 500){
+    IMUconnected = true;
+  } else {
+      if(IMUconnected != true) {
+        IMUconnected = false;
+      }
+    }
 }
 
 
 void sendDataTo32u4(){
- // SerialDebug.println(receiveIMUData.pitch);
   send32u4.sendData(); 
   if(rec32u4.receiveData()){
     rec32u4Millis = currentMillis;
-    if(feather2Connected == false){
-      feather2Connected = true;
-      DEBUG_PRINTLN("32u4 Connected");
-    } else {
-        feather2Connected = false; 
-        DEBUG_PRINTLN("32u4 Not Connected");
-    }
-   } else if((currentMillis - rec32u4Millis) > 100){
-      feather2Connected = false; 
-   }       
+   }
 }
 
 void sounds() {
@@ -871,24 +906,55 @@ void sounds() {
 
 void spinFlywheel() {
   if (sendTo32u4Data.flywheel > 1 && sendTo32u4Data.driveEnabled) {
-    digitalWrite(flyWheelMotor_pin_A, LOW);
-    digitalWrite(flyWheelMotor_pin_B, HIGH); // Motor 1 Forward
+    digitalWrite(flyWheelMotor_pin_A, 0);
+    digitalWrite(flyWheelMotor_pin_B, 1); // Motor 1 Forward
     analogWrite(flyWheelMotor_pwm,map(sendTo32u4Data.flywheel,1,100,0,255));
   } else if (sendTo32u4Data.flywheel < -1 && sendTo32u4Data.driveEnabled) {
-    digitalWrite(flyWheelMotor_pin_A, HIGH);
-    digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Backward
+    digitalWrite(flyWheelMotor_pin_A, 1);
+    digitalWrite(flyWheelMotor_pin_B, 0); // Motor 1 Backward
     analogWrite(flyWheelMotor_pwm,map(sendTo32u4Data.flywheel,-100,-1,255,0));
   } else {
-    digitalWrite(flyWheelMotor_pin_A, LOW);
-    digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Stopped
+    digitalWrite(flyWheelMotor_pin_A, 0);
+    digitalWrite(flyWheelMotor_pin_B, 0); // Motor 1 Stopped
   }
+}
+
+void spinFlywheel_test() {
+    for (int dutyCycle = 0; dutyCycle <= 50; dutyCycle++) {
+    digitalWrite(flyWheelMotor_pin_A, 1);
+    digitalWrite(flyWheelMotor_pin_B, 0); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(flyWheelMotor_pwm, dutyCycle);
+    delay(7);
+  }
+  for (int dutyCycle = 50; dutyCycle >= 0; dutyCycle--) {
+    digitalWrite(flyWheelMotor_pin_A, 1);
+    digitalWrite(flyWheelMotor_pin_B, 0); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(flyWheelMotor_pwm, dutyCycle);
+    delay(7);
+  } 
+  for (int dutyCycle = 0; dutyCycle <= 50; dutyCycle++) {
+    digitalWrite(flyWheelMotor_pin_A, 0);
+    digitalWrite(flyWheelMotor_pin_B, 1); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(flyWheelMotor_pwm, dutyCycle);
+    delay(7);
+  }
+  for (int dutyCycle = 50; dutyCycle >= 0; dutyCycle--) {
+    digitalWrite(flyWheelMotor_pin_A, 0);
+    digitalWrite(flyWheelMotor_pin_B, 1); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(flyWheelMotor_pwm, dutyCycle);
+    delay(7);
+  } 
 }
 
 void S2S_Movement(){
 //  Using the DFRobot Motor Driver we need 3 pins
-//  VCC and GND to power the driver logic
+//  VCC and GND to power the driver logic and must match the CPU voltage (3.3v)
 //  First pin is PWM for speed control 0 - 255
-//  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop
+//  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop (for ESP32 use 1 and 0)
 
   if (IMUconnected){
   Input_S2S_Servo = receiveIMUData.roll *-1;
@@ -900,31 +966,62 @@ void S2S_Movement(){
   }
   
   Setpoint_S2S_Servo = buttonsR.rightStickX; 
-  
   myPID_S2S_Servo.Compute();
   
-  Input_S2S_Stabilization = (map(analogRead(S2SPot_pin),0,1023,0,270)+S2S_offset)*-1;
-  //Input_S2S_Stabilization = (map(analogRead(S2SPot_pin),0,1023,0,270)-160)*-1;
-  
+  Input_S2S_Stabilization = (map(analogRead(S2SPot_pin),0,1023,0,270)+S2S_offset)*-1; // Currently the offset is set to -120
   Setpoint_S2S_Stabilization = Output_S2S_Servo;
   myPID_S2S_Stabilization.Compute(); 
   
-  if(Output_S2S_Stabilization > 5 && controllerConnected && enableDrive){
-    digitalWrite(S2S_pin_1, LOW);
-    digitalWrite(S2S_pin_2, HIGH); // Motor 1 Forward
+  if(Output_S2S_Stabilization > 5 && controllerConnected && enableDrive) {
+    digitalWrite(S2S_pin_1, 0);
+    digitalWrite(S2S_pin_2, 1); // Motor 1 Forward
     analogWrite(S2S_pwm, map(abs(Output_S2S_Stabilization),0,255,0,220));
-//    analogWrite(S2S_pin_2, 0); 
-  }else if(Output_S2S_Stabilization < -5 && controllerConnected && enableDrive){
-    digitalWrite(S2S_pin_1, HIGH);
-    digitalWrite(S2S_pin_2, LOW); // Motor 1 Backwards
-//    analogWrite(S2S_pin_1,  0);
+  } else if(Output_S2S_Stabilization < -5 && controllerConnected && enableDrive) {
+    digitalWrite(S2S_pin_1, 1);
+    digitalWrite(S2S_pin_2, 0); // Motor 1 Backwards
     analogWrite(S2S_pwm, map(Output_S2S_Stabilization,-255,0,220,0));
     
-  }else{
-    digitalWrite(S2S_pin_1, LOW);
-    digitalWrite(S2S_pin_2, LOW); // Motor 1 stopped
+  } else {
+    digitalWrite(S2S_pin_1, 0);
+    digitalWrite(S2S_pin_2, 0); // Motor 1 stopped
   }
 
+}
+
+void S2S_Movement_test(){
+//  Using the DFRobot Motor Driver we need 3 pins
+//  VCC and GND to power the driver logic
+//  First pin is PWM for speed control 0 - 255
+//  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop
+
+  for (int dutyCycle = 0; dutyCycle <= 50; dutyCycle++) {
+    digitalWrite(S2S_pin_1, 1);
+    digitalWrite(S2S_pin_2, 0); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(S2S_pwm, dutyCycle);
+    delay(7);
+  }
+  for (int dutyCycle = 50; dutyCycle >= 0; dutyCycle--) {
+    digitalWrite(S2S_pin_1, 1);
+    digitalWrite(S2S_pin_2, 0); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(S2S_pwm, dutyCycle);
+    delay(7);
+  } 
+  for (int dutyCycle = 0; dutyCycle <= 50; dutyCycle++) {
+    digitalWrite(S2S_pin_1, 0);
+    digitalWrite(S2S_pin_2, 1); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(S2S_pwm, dutyCycle);
+    delay(7);
+  }
+  for (int dutyCycle = 50; dutyCycle >= 0; dutyCycle--) {
+    digitalWrite(S2S_pin_1, 0);
+    digitalWrite(S2S_pin_2, 1); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(S2S_pwm, dutyCycle);
+    delay(7);
+  } 
 }
 
 void drive_Movement(){
@@ -949,20 +1046,17 @@ void drive_Movement(){
   myPID_Drive.Compute(); 
   
   if (Output_Drive > 5 && controllerConnected && enableDrive) {
-    digitalWrite(Drive_pin_1, LOW);
-    digitalWrite(Drive_pin_2, HIGH); // Motor 2 Forward
-    analogWrite(Drive_pwm, map(abs(Output_Drive),0,255,0,220));
-//    analogWrite(Drive_pin_1,0); 
-  } else if(Output_Drive < -5 && controllerConnected && enableDrive) {
-    digitalWrite(Drive_pin_1, HIGH);
-    digitalWrite(Drive_pin_2, LOW); // Motor 2 Backwards
-//      analogWrite(Drive_pin_2, 0);
-    analogWrite(Drive_pwm, map(abs(Output_Drive),0,255,0,220));
-  
+    digitalWrite(Drive_pin_1, 0);
+    digitalWrite(Drive_pin_2, 1); // Motor 2 Forward
+    analogWrite(Drive_pwm, map(abs(Output_Drive),0,255,0,240));
+  } else if (Output_Drive < -5 && controllerConnected && enableDrive) {
+    digitalWrite(Drive_pin_1, 1);
+    digitalWrite(Drive_pin_2, 0); // Motor 2 Backwards
+    analogWrite(Drive_pwm, map(abs(Output_Drive),0,255,0,240));
    } else {
-    digitalWrite(Drive_pin_1, LOW);
-    digitalWrite(Drive_pin_2, LOW); // Motor 2 stopped
-      }
+    digitalWrite(Drive_pin_1, 0);
+    digitalWrite(Drive_pin_2, 0); // Motor 2 stopped
+    }
 
 }
 
@@ -972,16 +1066,35 @@ void drive_Movement_test(){
 //  First pin is PWM for speed control 0 - 255
 //  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop
 
-    digitalWrite(Drive_pin_1, LOW);
-    digitalWrite(Drive_pin_2, HIGH); // Motor 2 Forward
-    analogWrite(Drive_pwm, 255);
-    delay(5000);  
-    digitalWrite(Drive_pin_1, LOW);
-    digitalWrite(Drive_pin_2, HIGH); // Motor 2 Forward
-    analogWrite(Drive_pwm, 120);
-    delay(5000);  
-    digitalWrite(Drive_pin_1, LOW);
-    digitalWrite(Drive_pin_2, LOW); // Motor 2 stopped
+ 
+  for (int dutyCycle = 0; dutyCycle <= 255; dutyCycle++) {
+    digitalWrite(Drive_pin_1, 1);
+    digitalWrite(Drive_pin_2, 0); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(Drive_pwm, dutyCycle);
+    delay(7);
+  }
+  for (int dutyCycle = 255; dutyCycle >= 0; dutyCycle--) {
+    digitalWrite(Drive_pin_1, 1);
+    digitalWrite(Drive_pin_2, 0); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(Drive_pwm, dutyCycle);
+    delay(7);
+  } 
+  for (int dutyCycle = 0; dutyCycle <= 255; dutyCycle++) {
+    digitalWrite(Drive_pin_1, 0);
+    digitalWrite(Drive_pin_2, 1); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(Drive_pwm, dutyCycle);
+    delay(7);
+  }
+  for (int dutyCycle = 255; dutyCycle >= 0; dutyCycle--) {
+    digitalWrite(Drive_pin_1, 0);
+    digitalWrite(Drive_pin_2, 1); // Motor 2 Forward
+//    ledcWrite(Drive_pwm, dutyCycle);
+    analogWrite(Drive_pwm, dutyCycle);
+    delay(7);
+  } 
 }
 
 void BatteryLevel(){
@@ -1109,7 +1222,63 @@ void Timechecks() {
   }
 }
 
+void autoDisableMotors(){
+  // buttonsR.rightStickY = Main Drive Forward and Backward
+  // buttonsR.rightStickX = S2S Steering using tilt
+  if((buttonsR.rightStickY > joystickDeadZoneRange && buttonsR.rightStickY < joystickDeadZoneRange) && (buttonsR.rightStickX > joystickDeadZoneRange && buttonsR.rightStickX < joystickDeadZoneRange) && (buttonsL.leftStickX > joystickDeadZoneRange && buttonsL.leftStickX < joystickDeadZoneRange) && (buttonsL.leftStickY < joystickDeadZoneRange && buttonsL.leftStickY > joystickDeadZoneRange) && (autoDisableState == 0)) {
+    autoDisableMotorsMillis = millis();
+    autoDisableState = 1;
+  } else if(buttonsR.rightStickY < joystickDeadZoneRange || buttonsR.rightStickY > joystickDeadZoneRange || buttonsR.rightStickY < joystickDeadZoneRange || buttonsR.rightStickY > joystickDeadZoneRange || buttonsL.leftStickX < joystickDeadZoneRange || buttonsL.leftStickX > joystickDeadZoneRange || buttonsL.leftStickY > joystickDeadZoneRange || buttonsL.leftStickY < joystickDeadZoneRange) {
+    autoDisableState = 0;     
+    autoDisableDoubleCheck = 0; 
+    autoDisable = 0;  
+  }
+          
+  if(autoDisableState == 1 && (millis() - autoDisableMotorsMillis >= 3000) && Output_S2S_Stabilization < 25 && Output_Drive_Stabilization < 8){
+    digitalWrite(Drive_pin_1, 0);
+    digitalWrite(Drive_pin_2, 0);
+    digitalWrite(S2S_pin_1, 0);
+    digitalWrite(S2S_pin_2, 0);
+    digitalWrite(flyWheelMotor_pin_A, 0);
+    digitalWrite(flyWheelMotor_pin_B, 0);
+    autoDisable = 1;
+      
+  }else if(Output_S2S_Stabilization > 50 || Output_Drive_Stabilization > 20){
+    autoDisableState = 0;
+    autoDisableDoubleCheck = 0;  
+    autoDisable = 0;    
+  }else if((Output_S2S_Stabilization > 25 || Output_Drive_Stabilization > 8) && autoDisableDoubleCheck == 0){
+    autoDisableDoubleCheckMillis = millis();
+    autoDisableDoubleCheck = 1;
+     
+  } else if((autoDisableDoubleCheck == 1) && (millis() - autoDisableDoubleCheckMillis >= 100)){
+    if(Output_S2S_Stabilization > 30 || Output_Drive_Stabilization > 8){ 
+      autoDisableState = 0;
+      autoDisableDoubleCheck = 0;
+      autoDisable = 0;
+    }else{
+      autoDisableDoubleCheck = 0;
+    }
+  } 
+      
+}
+  
 void debugRoutines(){
+#ifdef testMainDrive
+  drive_Movement_test(); 
+#endif
+#ifdef testS2S
+  S2S_Movement_test();
+#endif
+#ifdef testFlywheel
+  spinFlywheel_test();
+#endif
+
+#ifdef debugS2SPot
+  SerialDebug.print("S2SPOT_STAB:"); SerialDebug.print('\t');
+  SerialDebug.println(Input_S2S_Stabilization);
+#endif
+
 #ifdef debugRemote
   SerialDebug.print(sendTo32u4Data.leftStickY); SerialDebug.print('\t');
   SerialDebug.print(sendTo32u4Data.leftStickX); SerialDebug.print('\t');
@@ -1120,7 +1289,7 @@ void debugRoutines(){
   SerialDebug.print(sendTo32u4Data.xboxL3); SerialDebug.print('\t');
   SerialDebug.print(buttons.r1); SerialDebug.print('\t');
   SerialDebug.print(buttons.r2); SerialDebug.print('\t');
-  SerialDebug.print(sendTo32u4Data.xboxR3); SerialDebug.print('\t');
+  SerialDebug.print(sendTo32u4Data.moveps); SerialDebug.print('\t');
   SerialDebug.print(buttons.a); SerialDebug.print('\t');
   SerialDebug.print(buttons.b); SerialDebug.print('\t');
   SerialDebug.print(buttons.x); SerialDebug.print('\t');
@@ -1133,15 +1302,6 @@ void debugRoutines(){
   SerialDebug.print(enableDrive); SerialDebug.print('\t');
   SerialDebug.println(buttons.xbox); 
 #endif
-
-//
-#ifdef debugIMU
-  SerialDebug.print("IMU Pitch: ");
-  SerialDebug.print(receiveIMUData.pitch); SerialDebug.print('\t');
-  SerialDebug.print("IMU Roll: "); SerialDebug.print('\t');
-  SerialDebug.println(receiveIMUData.roll);
-#endif
-
 
 #ifdef debugMainDrive
   SerialDebug.print(F("In/Pitch (Input_Drive): ")); SerialDebug.print(Input_Drive); SerialDebug.print('\t'); 
