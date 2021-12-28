@@ -1,5 +1,5 @@
 /*
- * Joe's Drive  - V2 8/7/2021
+ * Joe's Drive  - V2 1/2022
  * Trinket IMU Dedicated board
  * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
  * You will need libraries: 
@@ -12,6 +12,8 @@
  * https://github.com/adafruit/Adafruit_MPU6050 for i2c and mpu6050 suppport (under arduino)
  * http://www.billporter.info/easytransfer-arduino-library/ Easytransfer version 1.7
 */
+
+#define debugMPU
 
 #include <Arduino.h>
 #include <EasyTransfer.h>
@@ -37,34 +39,36 @@ struct SEND_DATA_STRUCTURE{
 SEND_DATA_STRUCTURE sendIMUData;
 
 void setup(){
+  delay(10000); // Pause for the operation system to boot
   Serial.begin(115200);
   Serial1.begin(115200);
   //start the library, pass in the data details and the name of the serial port. Can be Serial, Serial1, Serial2, etc.
-  sendIMU.begin(details(sendIMUData), &Serial1);  
   Serial.println("Adafruit MPU6050 VALIDATION..."); // Try to initialize the MPU
+  sendIMU.begin(details(sendIMUData), &Serial1);  
   if (!mpu.begin()) {   
     Serial.println("Failed to find MPU6050 chip");
     while (1) {
       delay(10);
     }
   }
-  Serial.println("MPU6050 Found OVER I2C (QWIIC)!");
+
   setupmpu(); // Calls and displays various readings for the frequencies
   mpu_temp = mpu.getTemperatureSensor();
-  mpu_temp->printSensorDetails();
+  mpu_temp->printSensorDetails();M
 
   mpu_accel = mpu.getAccelerometerSensor();
   mpu_accel->printSensorDetails();
 
   mpu_gyro = mpu.getGyroSensor();
   mpu_gyro->printSensorDetails();
+  Serial.println("MPU6050 Found OVER I2C (QWIIC)!");
 }
 
 void loop(){
   //this is how you access the variables. [name of the group].[variable name]
+//  Serial.println("This should be working...");
   readmpu();
-  //send the data
-  sendIMU.sendData();
+  sendIMU.sendData();  //send the data
 }
 
 void setupmpu() {
@@ -138,6 +142,12 @@ void readmpu() {
   mpu_gyro->getEvent(&gyro);
   sendIMUData.pitch = accel.acceleration.x;
   sendIMUData.roll = accel.acceleration.y;
+  #ifdef debugMPU
+  Serial.print("roll: ");
+  Serial.print(sendIMUData.roll);
+  Serial.print(" pitch: ");
+  Serial.println(sendIMUData.pitch);
+  #endif
 //  Z = accel.acceleration.z;
 //  Roll = atan2(Y, Z) * 180/PI;
 //  Pitch = atan2(X, sqrt(Y*Y + Z*Z)) * 180/PI;
