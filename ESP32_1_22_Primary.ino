@@ -26,10 +26,9 @@
 //#define debugIMU
 //#define debugPOTS
 //#define debugMainDrive
-//#define debugFlywheel
+#define debugFlywheel
 //#define debugS2S
 //#define debugSounds
-
 #define MOVECONTROLLER
 //#define XBOXCONTROLLER   
 
@@ -244,27 +243,17 @@ double S2SPots;
 //"BB80055.ogg",  "BB80056.ogg"};
 
   //Specify the links and initial tuning parameters
-double Kp_S2S_Servo=.5, Ki_S2S_Servo=0, Kd_S2S_Servo=0;
+//double Kp_S2S_Servo=.5, Ki_S2S_Servo=0, Kd_S2S_Servo=0;
+double Kp_S2S_Servo=10, Ki_S2S_Servo=0, Kd_S2S_Servo=0;
 PID myPID_S2S_Servo(&Input_S2S_Servo, &Output_S2S_Servo, &Setpoint_S2S_Servo, Kp_S2S_Servo, Ki_S2S_Servo, Kd_S2S_Servo, DIRECT);
 
   //Specify the links and initial tuning parameters
-double Kp_S2S_Stabilization=10, Ki_S2S_Stabilization=0, Kd_S2S_Stabilization=0;
+//double Kp_S2S_Stabilization=10, Ki_S2S_Stabilization=0, Kd_S2S_Stabilization=0;
+double Kp_S2S_Stabilization=5, Ki_S2S_Stabilization=0, Kd_S2S_Stabilization=0;
 PID myPID_S2S_Stabilization(&Input_S2S_Stabilization, &Output_S2S_Stabilization, &Setpoint_S2S_Stabilization, Kp_S2S_Stabilization, Ki_S2S_Stabilization, Kd_S2S_Stabilization, DIRECT);
 
-//-----------------------------------------------------------------------------------------------------
-// Pendulum Tilt (30 degree limit in each direction)
-//-----------------------------------------------------------------------------------------------------
-//     if (posarray[2] == 90)  
-//     {
-//      Left_Right_Servo_Variable = Left_Right_Servo_Home;
-//     }
-//     else 
-//     {
-//      Left_Right_Servo_Variable = map(posarray[2], 0, 180, Servo_Range_LOW, Servo_Range_HIGH);  
-//     } 
-
-  //Specify the links and initial tuning parameters
-double Kp_Drive=4, Ki_Drive=0, Kd_Drive=0;
+//double Kp_Drive=6, Ki_Drive=0, Kd_Drive=0;
+double Kp_Drive=10, Ki_Drive=0, Kd_Drive=0;
 PID myPID_Drive(&Input_Drive, &Output_Drive, &Setpoint_Drive, Kp_Drive, Ki_Drive, Kd_Drive, DIRECT);
 
 bool enabledDrive;
@@ -298,18 +287,18 @@ void setup() {
   send32u4.begin(details(sendTo32u4Data), &Serial2);
 
 // Lets do some spot checks on the connections to other chips/CPUs
-  #ifdef debug32u4
-  if(!rec32u4.receiveData()){
-      feather2Connected = false; 
-      Serial.println("32u4 Not Connected");
-  } else {
-    if(feather2Connected == false){
-      rec32u4Millis = currentMillis;
-      feather2Connected = true;
-      Serial.println("32u4 Connected");
+#ifdef debug32u4
+   if(!rec32u4.receiveData()){
+        feather2Connected = false; 
+        Serial.println("32u4 Not Connected");
+   } else {
+      if(feather2Connected == false){
+        rec32u4Millis = currentMillis;
+        feather2Connected = true;
+        Serial.println("32u4 Connected");
+      }
     }
-  }
-  #endif
+#endif
   for (int i = 0; i <= 10000; i++) {
     IMUmillis = currentMillis; 
     IMUconnected = false; 
@@ -321,11 +310,24 @@ void setup() {
       break;
     }
   }
+//  if(!recIMU.receiveData()){
+//    IMUmillis = currentMillis; 
+//    IMUconnected = false; 
+//    Serial.println("IMU Not Connected");
+//  } else {
+//    if(IMUconnected == false){
+//      IMUmillis = currentMillis;
+//      IMUconnected = true;
+//      Serial.println("IMU Connected");
+//    }
+//    if((currentMillis - IMUmillis) > 25) {
+//      IMUconnected = false; 
+//      Serial.println("IMU Not Connected");
+//    }
+//  }
 
-/*  Set the pins to correct method for use for the DFRobot Motor Driver 
- *  IMPORTANT: Make sure you are using analogWrite from this library
- *  https://github.com/ERROPiX/ESP32_AnalogWrite
-*/
+
+  /* Set the pins to correct method for use for the DFRobot Motor Driver */
   pinMode(S2S_pwm, OUTPUT);  // Speed Of Motor2 on Motor Driver 1 
   pinMode(S2S_pin_1, OUTPUT);  // Direction
   pinMode(S2S_pin_2, OUTPUT);
@@ -345,7 +347,6 @@ void setup() {
   
 void loop() {
   currentMillis = millis(); 
-//  S2S_Movement_test();
   if(currentMillis - lastLoopMillis >= 10) {
     lastLoopMillis = currentMillis; 
     receiveIMU();
@@ -422,10 +423,8 @@ void receiveRemote() {
       }else{
         sendTo32u4Data.flywheel = 0; 
       }
-      #ifdef debugRemote
-        DEBUG_PRINT("Flywheel Enabled: ");
-        DEBUG_PRINTLN(sendTo32u4Data.flywheel);
-      #endif
+      DEBUG_PRINT("Flywheel Enabled: ");
+      DEBUG_PRINTLN(sendTo32u4Data.flywheel);
     } 
 //    if(buttonsL.l1){
 //        sendTo32u4Data.flywheel = 0;
@@ -438,7 +437,6 @@ void receiveRemote() {
 //        }else{
 //          sendTo32u4Data.domeSpin = 0; 
 //        }
-
 //        DEBUG_PRINT("Domespin Enabled: ");
 //        DEBUG_PRINTLN(sendTo32u4Data.domeSpin);
 //      }
@@ -446,16 +444,12 @@ void receiveRemote() {
     if(CHECK_BUTTON_PRESSEDR(l3)){
       if (enableDrive == false) {
         enableDrive = true;
-        #ifdef debugRemote
-          DEBUG_PRINTLN("Drive Enabled");
-          DEBUG_PRINTLN(enableDrive);
-        #endif
+        DEBUG_PRINTLN("Drive Enabled");
+        DEBUG_PRINTLN(enableDrive);
       } else {
         enableDrive = false; 
-        #ifdef debugRemote
-          DEBUG_PRINTLN("Drive Disabled");
-          DEBUG_PRINTLN(enableDrive);
-        #endif
+        DEBUG_PRINTLN("Drive Disabled");
+        DEBUG_PRINTLN(enableDrive);
       }
       sendTo32u4Data.driveEnabled = enableDrive; 
     }
@@ -565,7 +559,7 @@ void S2S_Movement(){
   } else {
     Input_S2S_Servo = Input_S2S_Servo;
   }
-  if(sendTo32u4Data.moveL3 == false){
+  if(reverseDrive){
     buttonsR.rightStickX *= -1; 
   }
   if(!buttonsL.l1){
@@ -574,32 +568,23 @@ void S2S_Movement(){
     
     myPID_S2S_Servo.Compute();
     S2SPots = analogRead(S2SPot_pin); // For debugging raw values storing them in S2SPots as float
-    Input_S2S_Stabilization = (map(analogRead(S2SPot_pin),0,4095,0,270)+S2S_offset)*-1;
-//  Input_S2S_Stabilization = (map(analogRead(S2SPot_pin),0,1023,0,270)+S2S_offset)*-1;
-//  Input_S2S_Stabilization = (map(analogRead(S2SPot_pin),0,1023,0,270)-160)*-1;
-
-  
+    Input_S2S_Stabilization = (map(analogRead(S2SPot_pin),0,4095,0,270)+S2S_offset)*-1;  
     Setpoint_S2S_Stabilization = constrain(Output_S2S_Servo, -S2S_maxTilt,S2S_maxTilt);
-//  Setpoint_S2S_Stabilization = Output_S2S_Servo;
     myPID_S2S_Stabilization.Compute(); 
 
     if((Output_S2S_Stabilization >= -5) && (Input_S2S_Stabilization >= -S2S_maxTilt) && controllerConnected && enableDrive) {
-//  if(Output_S2S_Stabilization > 5 && controllerConnected && enableDrive) {
       digitalWrite(S2S_pin_1, LOW);
       digitalWrite(S2S_pin_2, HIGH); // Motor 1 Forward
-//    analogWrite(S2S_pwm, map(abs(Output_S2S_Stabilization),255,-255,200,0));
-      analogWrite(S2S_pwm, map(abs(Output_S2S_Stabilization),0,255,0,255));
+      
     } else if((Output_S2S_Stabilization <= 5)  && (Input_S2S_Stabilization <= S2S_maxTilt) && controllerConnected && enableDrive) {
-//  } else if(Output_S2S_Stabilization < 5) && controllerConnected && enableDrive) {
       digitalWrite(S2S_pin_1, HIGH);
       digitalWrite(S2S_pin_2, LOW); // Motor 1 Backwards
-//    analogWrite(S2S_pwm, map(Output_S2S_Stabilization,-255,255,200,0));
-      analogWrite(S2S_pwm, map(abs(Output_S2S_Stabilization),255,0,255,0));
     
     } else {
       digitalWrite(S2S_pin_1, LOW);
       digitalWrite(S2S_pin_2, LOW); // Motor 1 stopped
     }
+    analogWrite(S2S_pwm, map(abs(Output_S2S_Stabilization),0,255,0,255));
   }
  
 }
@@ -611,8 +596,9 @@ void drive_Movement(){
 //  First pin is PWM for speed control 0 - 255
 //  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop
 
-  Input_Drive = receiveIMUData.pitch; 
-  if(reverseDrive == false){
+  Input_Drive = receiveIMUData.pitch;
+  Setpoint_Drive_In = buttonsR.rightStickY;
+  if(reverseDrive){
     buttonsR.rightStickY *= -1;
   }
   if(Setpoint_Drive_In > buttonsR.rightStickY){
@@ -623,37 +609,37 @@ void drive_Movement(){
   
   Setpoint_Drive = map(Setpoint_Drive_In,-100,100,-40,40); 
   
-  //Setpoint_Drive = buttons.rightStickY * -1; 
   myPID_Drive.Compute(); 
   
   if (Output_Drive > 5 && controllerConnected && enableDrive) {
     digitalWrite(Drive_pin_1, LOW);
     digitalWrite(Drive_pin_2, HIGH); // Motor 2 Forward
-    analogWrite(Drive_pwm, map(abs(Output_Drive),0,255,0,220));
   } else if(Output_Drive < -5 && controllerConnected && enableDrive) {
     digitalWrite(Drive_pin_1, HIGH);
     digitalWrite(Drive_pin_2, LOW); // Motor 2 Backwards
-    analogWrite(Drive_pwm, map(abs(Output_Drive),255,0,220,0));
+
    } else {
     digitalWrite(Drive_pin_1, LOW);
     digitalWrite(Drive_pin_2, LOW); // Motor 2 stopped
       }
-
+//  analogWrite(Drive_pwm, map(abs(Output_Drive),255,0,220,0));
+  analogWrite(Drive_pwm,abs(Output_Drive));
 }
 
 void spinFlywheel() {
   if (sendTo32u4Data.flywheel >= 10 && enableDrive) {
     digitalWrite(flyWheelMotor_pin_A, LOW);
     digitalWrite(flyWheelMotor_pin_B, HIGH); // Motor 1 Forward
-    analogWrite(flyWheelMotor_pwm,abs(sendTo32u4Data.flywheel));
+    
   } else if (sendTo32u4Data.flywheel <= -10 && enableDrive) {
     digitalWrite(flyWheelMotor_pin_A, HIGH);
     digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Backward
-    analogWrite(flyWheelMotor_pwm,abs(sendTo32u4Data.flywheel));
+
   } else {
     digitalWrite(flyWheelMotor_pin_A, LOW);
     digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Stopped
   }
+  analogWrite(flyWheelMotor_pwm,abs(sendTo32u4Data.flywheel));
 }
 
 //void psiTime(){
@@ -907,4 +893,6 @@ void batterycheck() {
 #endif
 
      
+     
+  
 }
