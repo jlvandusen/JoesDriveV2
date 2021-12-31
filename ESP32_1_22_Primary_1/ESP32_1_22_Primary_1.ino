@@ -166,8 +166,7 @@ struct SEND_DATA_STRUCTURE_32u4{
   int8_t domeSpin;
   bool moveL3; // xbox L3 equivilent
   int8_t flywheel;
-//  int flywheel;
-  bool moveps; // xboxR3 equivilent
+  bool moveR3; // xboxR3 equivilent
   int8_t leftStickX;
   int8_t leftStickY;
 //  int8_t rightStickX;
@@ -232,7 +231,7 @@ SoftwareSerial Serial3;
 #define SERIAL3_TX_PIN 23 //SDA - General purpose IO pin #23
 
 unsigned long currentMillis, IMUmillis, lastLoopMillis, lastDomeMillis, rec32u4Millis, lastPrintMillis; 
-bool IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected, enableDrive, reverseDrive, enabledDrive;
+bool IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected, DomeServoMode, enableDrive, reverseDrive, enabledDrive;
 
 
 //int pot_S2S;   // target position/inout
@@ -252,7 +251,7 @@ int diff_S2S; // difference of position
 double easing_S2S;
 
 int Output_flywheel_pwm; // variables for PWM controls of flywheel
-
+int Output_domeSpin_pwm;
 
 double Pk1 = 10;  //speed at which it gets there 5
 double Ik1 = 0;
@@ -409,7 +408,12 @@ void sendDataTo32u4(){
 //  }
 //}
 
-
+//void readBatteryVoltage() {    // read the value at analog input
+//  batt_Voltage = (((analogRead(voltageSensor_Pin)) * 3.28) / 1024.0) / (R2/(R1+R2));
+//  #ifdef debugVS
+//    Serial.print(F("Battery Voltage: ")); Serial.println(batt_Voltage); 
+//  #endif
+//}
 
 
 void BatteryLevel(){

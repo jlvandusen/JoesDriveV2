@@ -3,7 +3,7 @@ void Servos() {
 //  Based on James Bruton's excellent examples on triangulation and positioning using 2 BB sized Servos.
   int domeTurnPercent; 
   int y_Axis, x_Axis; 
-  if(receiveFromESP32Data.driveEnabled) {
+  if(enableDrive) {
      // Serial.println(millis()); 
     if(domeServoMode){
       domeTurnPercent = map(Setpoint_domeSpinServoPid,-90,90,100,-100);
@@ -45,7 +45,7 @@ void Servos() {
             x_Axis -= map(receiveFromESP32Data.leftStickX,-100,0,(100+domeTurnPercent),0); 
           }
        } 
-    }else{
+    } else{
       x_Axis = receiveFromESP32Data.leftStickX;
       y_Axis = receiveFromESP32Data.leftStickY;
     }

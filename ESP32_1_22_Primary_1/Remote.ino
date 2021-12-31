@@ -56,7 +56,19 @@ void receiveRemote() {
     else {
       sendTo32u4Data.flywheel = 0;
       Output_flywheel_pwm = 0;
+      
     }
+    if(buttonsR.l1){ // Check if the Dome Controller L1 Button is held (Flywheel engaged)
+      sendTo32u4Data.flywheel = 0;
+      sendTo32u4Data.domeSpin = buttonsR.rightStickX;
+      Output_domeSpin_pwm = map(buttonsR.rightStickX,-127,127,-255,255);
+    }
+    else {
+      sendTo32u4Data.domeSpin = 0;
+      Output_domeSpin_pwm = 0;
+      
+    }
+    
 
 //  if(CHECK_BUTTON_PRESSEDR(l1)){
 
@@ -75,7 +87,8 @@ void receiveRemote() {
 //        DEBUG_PRINTLN(sendTo32u4Data.domeSpin);
 //      }
 
-    if(CHECK_BUTTON_PRESSEDR(l3)){
+//    if(CHECK_BUTTON_PRESSEDR(l3)){
+    if(CHECK_BUTTON_PRESSEDR(ps)){
       if (enableDrive == false) {
         enableDrive = true;
         DEBUG_PRINTLN("Drive Enabled");
@@ -85,8 +98,22 @@ void receiveRemote() {
         DEBUG_PRINTLN("Drive Disabled");
         DEBUG_PRINTLN(enableDrive);
       }
-      sendTo32u4Data.driveEnabled = enableDrive; 
+      sendTo32u4Data.driveEnabled = enableDrive;
     }
+    
+    if(CHECK_BUTTON_PRESSEDR(l3)){
+      if (DomeServoMode == false) {
+        DomeServoMode = true;
+        DEBUG_PRINTLN("Dome Servo Mode");
+        DEBUG_PRINTLN(DomeServoMode);
+      } else {
+        DomeServoMode = false; 
+        DEBUG_PRINTLN("Dome Servo Disabled");
+        DEBUG_PRINTLN(DomeServoMode);
+      }
+      sendTo32u4Data.moveR3 = DomeServoMode;
+    }
+    
     if(CHECK_BUTTON_PRESSEDL(l3)){
       if (reverseDrive == false) {
         reverseDrive = true;

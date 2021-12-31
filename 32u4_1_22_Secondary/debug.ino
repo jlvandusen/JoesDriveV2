@@ -1,14 +1,49 @@
 void debugRoutines(){
 
-#ifdef debugEasyTransfer
-
-  Serial.print("\t"); Serial.print(receiveFromESP32Data.driveEnabled);
-  Serial.print("\t"); Serial.print(receiveFromESP32Data.leftStickX);
-  Serial.print("\t"); Serial.print(receiveFromESP32Data.leftStickY);
-  Serial.print("\t"); Serial.print(receiveFromESP32Data.pitch);
-  Serial.print("\t"); Serial.println(receiveFromESP32Data.roll);
-
-#endif
+  #ifdef debugDOME
+  
+    int domecenter = digitalRead(hallEffectSensor_Pin);
+    SerialDebug.print(F("domecenter: ")); SerialDebug.print(domecenter); SerialDebug.print('\t');
+    SerialDebug.print(F("domeCenterSet: ")); SerialDebug.print(domeCenterSet); SerialDebug.print('\t');
+    SerialDebug.print(F("domeServoMode: ")); SerialDebug.print(domeServoMode); SerialDebug.print('\t');
+    SerialDebug.print(F("domeSpin: ")); SerialDebug.print(receiveFromESP32Data.domeSpin); SerialDebug.print('\t');
+    SerialDebug.print(F("leftStickX: ")); SerialDebug.print(receiveFromESP32Data.leftStickX); SerialDebug.print('\t');
+    SerialDebug.print(F("domeServoPWM: ")); SerialDebug.print(domeServoPWM); SerialDebug.print('\t');
+    SerialDebug.print(F("enableDrive: ")); Serial.print(enableDrive); SerialDebug.println('\t');
+      
+  #endif
+  
+  #ifdef debugHALLFull
+  
+    SerialDebug.print(F("hallEffectSensor_Pin: ")); SerialDebug.print(hallEffectSensor_Pin); SerialDebug.print('\t');
+    SerialDebug.print(F("domeServoMode: ")); SerialDebug.print(domeServoMode); SerialDebug.print('\t');
+    SerialDebug.print(F("domeServoMode: ")); SerialDebug.print(domeServoMode); SerialDebug.print('\t');
+    SerialDebug.print(F("domeSpin: ")); SerialDebug.print(receiveFromESP32Data.domeSpin); SerialDebug.print('\t');
+    SerialDebug.print(F("leftStickX: ")); SerialDebug.print(receiveFromESP32Data.leftStickX); SerialDebug.print('\t');
+    SerialDebug.print(F("domeSpin: ")); SerialDebug.print(receiveFromESP32Data.domeSpin); SerialDebug.print('\t');
+    SerialDebug.print(F("enableDrive: ")); Serial.print(enableDrive); SerialDebug.println('\t');
+      
+  #endif
+  
+  #ifdef debugHALL
+    int domecenter = digitalRead(hallEffectSensor_Pin);
+    SerialDebug.print(F("domecenter? (0=true): ")); Serial.print(domecenter); SerialDebug.println('\t');
+  #endif
+  
+  #ifdef debugEasyTransfer
+  
+     SerialDebug.print(F("enableDrive: ")); Serial.print(enableDrive); Serial.print("\t"); 
+     SerialDebug.print(F("domeServoMode: ")); Serial.print(domeServoMode); Serial.print("\t"); 
+     SerialDebug.print(F("MoveL3: ")); Serial.print(receiveFromESP32Data.moveL3); Serial.print("\t"); 
+     SerialDebug.print(F("MoveR3: ")); Serial.print(receiveFromESP32Data.moveR3); Serial.print("\t"); 
+     SerialDebug.print(F("domeSpin: ")); Serial.print(receiveFromESP32Data.domeSpin); Serial.print("\t"); 
+     SerialDebug.print(F("leftStickY: ")); Serial.print(receiveFromESP32Data.leftStickY); Serial.print("\t"); 
+     SerialDebug.print(F("leftStickX: ")); Serial.print(receiveFromESP32Data.leftStickX); Serial.print("\t"); 
+     SerialDebug.print(F("domeSpin: ")); Serial.print(receiveFromESP32Data.domeSpin); Serial.print("\t"); 
+     SerialDebug.print(F("domeSpin: ")); Serial.print(receiveFromESP32Data.domeSpin); Serial.print("\t"); 
+     SerialDebug.print(F("enableDrive: ")); Serial.print(enableDrive); SerialDebug.println('\t');
+  
+  #endif
 
 #ifdef printRemote
   Serial.print("\t"); Serial.print(receiveFromESP32Data.driveEnabled);
