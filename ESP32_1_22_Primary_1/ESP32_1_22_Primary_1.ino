@@ -69,6 +69,11 @@
 #define flyWheelMotor_pin_B 14
 #define voltageSensor_Pin A3 //A4 or 13
 
+// Reverse Drives based on pin connections (reverse Polartity)
+#define revS2S
+#define revDrive
+#define revGyro
+
 /*
  * ESP32 FEATHER INFORMATION
  * Chip used: Adafruit ESP32 HUZZAH32 with stacking headers https://www.adafruit.com/product/3619
@@ -104,12 +109,6 @@ SDA - General purpose IO pin #23
 #include <Arduino.h>
 #include <EasyTransfer.h>
 #include <Wire.h>
-//#include <i2cSimpleTransfer.h>
-//#include <EasyTransferI2C_NL.h>
-//#include <EasyTransferI2C.h>
-//#include <SPI.h>
-//#include <SD.h>
-//#include <Adafruit_VS1053.h>
 #include <PID_v1.h>
 #include "wiring_private.h" // pinPeripheral() function
 
@@ -156,7 +155,7 @@ struct SEND_DATA_STRUCTURE_32u4{
   int8_t rightStickY;
   bool psiFlash;
   float pitch;
-  float roll; 
+  float roll;
 };
 #endif
 
@@ -174,6 +173,7 @@ struct SEND_DATA_STRUCTURE_32u4{
   bool psiFlash;
   float pitch;
   float roll; 
+//  int8_t soundcmd; 
 };
 #endif
 

@@ -21,7 +21,7 @@ void S2S_Movement(){
   
   Input2 = (receiveIMUData.roll*-1)- bodge;   // ****add a bit to the IMU to get the real middle point
   
-  Setpoint2 = constrain(Setpoint2, -45,45);
+  Setpoint2 = constrain(Setpoint2, -45,45);  // Allow the S2S to only move 45 each direction
   PID2_S2S.Compute();
   Setpoint1 = Output2;
   
@@ -38,21 +38,31 @@ void S2S_Movement(){
   if (Output1 < 0) // decide which way to turn the wheels based on deadSpot variable
   {
     Output1_S2S_pwm = abs(Output1);
+    #ifndef revS2S
     digitalWrite(S2S_pin_1, LOW);
     digitalWrite(S2S_pin_2, HIGH); // Motor 1 Forward
+    #else
+    digitalWrite(S2S_pin_1, HIGH);
+    digitalWrite(S2S_pin_2, LOW); // Motor 1 Forward
+    #endif
   }
   else if (Output1 >= 0) // decide which way to turn the wheels based on deadSpot variable
   { 
     Output1_S2S_pwm = abs(Output1);
+    #ifndef revS2S
     digitalWrite(S2S_pin_1, HIGH);
     digitalWrite(S2S_pin_2, LOW); // Motor 1 Backwards
+    #else
+    digitalWrite(S2S_pin_1, LOW);
+    digitalWrite(S2S_pin_2, HIGH); // Motor 1 Forward
+    #endif
   } 
   else
   {
     digitalWrite(S2S_pin_1, LOW);
     digitalWrite(S2S_pin_2, LOW); // Motor 1 stopped
   }
-  if (controllerConnected && enableDrive && !buttonsL.l1 && !buttonsR.l1) {
+  if (controllerConnected && enableDrive && !buttonsL.l1 && !buttonsR.l1) { // Check to ensure that L1 is not pressed on either Dome or Drive Controllers
     analogWrite(S2S_pwm, Output1_S2S_pwm);
   }
   else {
@@ -91,19 +101,29 @@ void drive_Movement(){
   
   if (Output3 <= 1) {                              // decide which way to turn the wheels based on deadSpot variable
     Output_Drive_pwm = abs(Output3);
+    #ifndef revDrive
     digitalWrite(Drive_pin_1, LOW);
     digitalWrite(Drive_pin_2, HIGH);
+    #else
+    digitalWrite(Drive_pin_1, HIGH);
+    digitalWrite(Drive_pin_2, LOW);
+    #endif
   }
   else if (Output3 > 1) {                         // decide which way to turn the wheels based on deadSpot variable
     Output_Drive_pwm = abs(Output3);
+    #ifndef revDrive
     digitalWrite(Drive_pin_1, HIGH);  
     digitalWrite(Drive_pin_2, LOW);
+    #else
+    digitalWrite(Drive_pin_1, LOW);
+    digitalWrite(Drive_pin_2, HIGH);
+    #endif
   }
   else {  // Motor 1 stopped
     digitalWrite(Drive_pin_1, LOW);
     digitalWrite(Drive_pin_2, LOW);
   }
-  if (controllerConnected && enableDrive && !buttonsL.l1 && !buttonsR.l1) {
+  if (controllerConnected && enableDrive && !buttonsL.l1 && !buttonsR.l1) { // Check to ensure that L1 is not pressed on either Dome or Drive Controllers
     analogWrite(Drive_pwm, Output_Drive_pwm);
   }
   else {
@@ -115,12 +135,22 @@ void drive_Movement(){
 
 void spinFlywheel() {
   if (sendTo32u4Data.flywheel >= 10) {
+    #ifndef revGyro
     digitalWrite(flyWheelMotor_pin_A, LOW);
     digitalWrite(flyWheelMotor_pin_B, HIGH); // Motor 1 Forward
+    #else
+    digitalWrite(flyWheelMotor_pin_A, HIGH);
+    digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Forward
+    #endif
     
   } else if (sendTo32u4Data.flywheel < -10) {
+    #ifndef revGyro
     digitalWrite(flyWheelMotor_pin_A, HIGH);
     digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Backward
+    #else
+    digitalWrite(flyWheelMotor_pin_A, LOW);
+    digitalWrite(flyWheelMotor_pin_B, HIGH); // Motor 1 Forward
+    #endif
 
   } else {
     digitalWrite(flyWheelMotor_pin_A, LOW);

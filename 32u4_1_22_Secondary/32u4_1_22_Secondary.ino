@@ -79,6 +79,8 @@ struct RECEIVE_DATA_STRUCTURE {
   bool moveR3;
   int8_t leftStickX;
   int8_t leftStickY;
+//  int8_t rightStickX;
+//  int8_t rightStickY;
   bool psiFlash;
   float pitch;
   float roll;
@@ -195,7 +197,7 @@ void SendRecieveData() {
     enableDrive = receiveFromESP32Data.driveEnabled;
     domeServoMode = receiveFromESP32Data.moveR3;
     sendESP32.sendData(); 
-    if(currentMillis - receiveMillis >= 250 && enableDrive){
+    if(currentMillis - receiveMillis >= 300 && enableDrive){
       enableDrive = !enableDrive; 
     }  
   }

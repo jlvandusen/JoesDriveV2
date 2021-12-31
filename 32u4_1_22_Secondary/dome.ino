@@ -66,8 +66,10 @@ void spinDome() {
       
 
 void domeServoMovement() {
+  
   if (domeServoMode && enableDrive) {
-      Setpoint_domeSpinServoPid = map(receiveFromESP32Data.domeSpin, -100, 100, 75, -75); 
+      domeServoPWM = map(receiveFromESP32Data.domeSpin,-127,127,-75,75);
+      Setpoint_domeSpinServoPid = domeServoPWM;
     } else {
       Setpoint_domeSpinServoPid = 0; 
     }
@@ -76,11 +78,11 @@ void domeServoMovement() {
 
   myPID_domeSpinServoPid.Compute(); 
     
-  if (Output_domeSpinServoPid >2 && receiveFromESP32Data.driveEnabled) {
+  if (Output_domeSpinServoPid >2 && enableDrive) {
     digitalWrite(domeMotor_pin_A, LOW);
     digitalWrite(domeMotor_pin_B, HIGH); // Motor 1 Forward
-    analogWrite(domeMotor_pwm,abs(Output_domeSpinServoPid));
-  } else if (Output_domeSpinServoPid <-2 && receiveFromESP32Data.driveEnabled) {
+    analogWrite(domeMotor_pwm,abs(domeServoPWM));
+  } else if (Output_domeSpinServoPid <-2 && enableDrive) {
     digitalWrite(domeMotor_pin_A, HIGH);
     digitalWrite(domeMotor_pin_B, LOW); // Motor 1 Backward
     analogWrite(domeMotor_pwm,abs(Output_domeSpinServoPid));
