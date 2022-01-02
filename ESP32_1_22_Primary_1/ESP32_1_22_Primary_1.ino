@@ -33,7 +33,7 @@
 //#define debugPOTS
 //#define debugMainDrive
 //#define debugFlywheel
-//#define debugS2S
+#define debugS2S
 //#define debugSounds
 
 
@@ -71,7 +71,7 @@
 
 // Reverse Drives based on pin connections (reverse Polartity)
 #define revS2S
-#define revDrive
+//#define revDrive
 #define revGyro
 
 /*
@@ -238,11 +238,11 @@ bool IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontro
 
 int current_pos_drive;  // variables for smoothing main drive
 int target_pos_drive;
-int pot_drive;   // target position/inout
+//int pot_drive;   // target position/inout
 int diff_drive; // difference of position
 double easing_drive;
 
-float bodge = 3;
+float bodge = 0;  //3
 
 int current_pos_S2S;  // variables for smoothing S2S
 int target_pos_S2S;
@@ -253,19 +253,19 @@ double easing_S2S;
 int Output_flywheel_pwm; // variables for PWM controls of flywheel
 int Output_domeSpin_pwm;
 
-double Pk1 = 10;  //speed at which it gets there 5
-double Ik1 = 0;
-double Dk1 = 0;
+double Pk1 = 13;  //10
+double Ik1 = 1;   //0
+double Dk1 = 1;   //0
 double Setpoint1, Input1, Output1, Output1_S2S_pwm;    // PID variables - tousers SERVO
 PID PID1_S2S(&Input1, &Output1, &Setpoint1, Pk1, Ik1 , Dk1, DIRECT);    // PID Setup - S2S Drive
 
-double Pk2 = 10; // position it needs to goes to 1
-double Ik2 = 0;
-double Dk2 = 0;
+double Pk2 = 13; // 10
+double Ik2 = 0; //0
+double Dk2 = 0.03; //0
 double Setpoint2, Input2, Output2, Output2_S2S_pwm;    // PID variables - S2S stability
 PID PID2_S2S(&Input2, &Output2, &Setpoint2, Pk2, Ik2 , Dk2, DIRECT);    // PID Setup - S2S stability
 
-double Pk3 = 20; // position it goes to 3
+double Pk3 = 13; // 4
 double Ik3 = 0;
 double Dk3 = 0;
 double Setpoint3, Input3, Output3, Output_Drive_pwm;    // PID variables - Main drive motor

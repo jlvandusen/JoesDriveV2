@@ -35,9 +35,10 @@
   
   #ifdef debugPOTS
   
-    SerialDebug.println(Input_S2S_Stabilization); SerialDebug.print('\t');
-    SerialDebug.println(S2SPots);
-    
+    SerialDebug.print(F("Setpoint2: ")); SerialDebug.print(Setpoint2); SerialDebug.print('\t');
+    SerialDebug.print(F("S2S_pot: ")); SerialDebug.print(S2S_pot); SerialDebug.print('\t');
+    SerialDebug.print(F("Input2: ")); SerialDebug.print(Input2); SerialDebug.println('\t');
+
   #endif
 
   #ifdef debugS2S
@@ -45,6 +46,7 @@
     SerialDebug.print(F("Target: ")); SerialDebug.print(target_pos_S2S ); SerialDebug.print('\t'); 
     SerialDebug.print(F("JOYX: ")); SerialDebug.print(buttonsR.rightStickX); SerialDebug.print('\t'); 
     SerialDebug.print(F("current_pos_S2S: ")); SerialDebug.print(current_pos_S2S); SerialDebug.print('\t'); 
+    SerialDebug.print(F("diff_S2S: ")); SerialDebug.print(diff_S2S); SerialDebug.print('\t');
     SerialDebug.print(F("Setpoint2: ")); SerialDebug.print(Setpoint2); SerialDebug.print('\t');
     SerialDebug.print(F("Input1/Pot: ")); SerialDebug.print(S2S_pot); SerialDebug.print('\t');
     

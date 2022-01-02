@@ -6,8 +6,8 @@ void S2S_Movement(){
 
   target_pos_S2S = map(buttonsR.rightStickX, -127,127,-40,40);  //Read in the Move Controller X Axis of Right Stick and force it from 127 extremes to 40
   
-  easing_S2S = 1000;  //modify these values for sensitivity
-  easing_S2S /= 1000;
+  easing_S2S = 500;  //modify these values for sensitivity
+  easing_S2S /= 500;
   
   diff_S2S = target_pos_S2S - current_pos_S2S; // Work out the required travel.
   
@@ -22,10 +22,16 @@ void S2S_Movement(){
   Input2 = (receiveIMUData.roll*-1)- bodge;   // ****add a bit to the IMU to get the real middle point
   
   Setpoint2 = constrain(Setpoint2, -45,45);  // Allow the S2S to only move 45 each direction
-  PID2_S2S.Compute();
-  Setpoint1 = Output2;
   
+  PID2_S2S.Compute();
+  
+  Setpoint1 = Output2;
+  #ifndef revS2S
   S2S_pot = map(S2S_pot, 0, 4095, 255,-255);
+  #else
+  S2S_pot = map(S2S_pot, 0, 4095, -255,255);
+  #endif
+  
   S2S_pot = S2S_pot-2;
   
   Input1  = S2S_pot;
