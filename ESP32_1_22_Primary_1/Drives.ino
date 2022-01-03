@@ -19,7 +19,7 @@ void S2S_Movement(){
   
   S2S_pot = analogRead(S2SPot_pin);   // read S2S pot
   
-  Input2 = (receiveIMUData.roll*-1)- bodge;   // ****add a bit to the IMU to get the real middle point
+  Input2 = (receiveIMUData.roll*-1)- IMUDeadzone;   // ****add a bit to the IMU to get the real middle point
   
   Setpoint2 = constrain(Setpoint2, -45,45);  // Allow the S2S to only move 45 each direction
   
@@ -34,7 +34,7 @@ void S2S_Movement(){
   
   S2S_pot = S2S_pot-2;
   
-  Input1  = S2S_pot;
+  Input1  = S2S_pot;  // Take in the value from Potentiometer
   Input1 = constrain(Input1,-45,45);
   Setpoint1 = constrain(Setpoint1, -45,45);
   Setpoint1 = map(Setpoint1,45,-45,-45,45);
