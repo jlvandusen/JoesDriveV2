@@ -10,12 +10,16 @@
  * On Line 117 - replace this with the mac of dome uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
  * Modified ESP32 BT Host Library https://github.com/reeltwo/PSController
  * 
+ * Filtering
+ * https://www.norwegiancreations.com/2015/10/tutorial-potentiometers-with-arduino-and-filtering/
+ * 
  * Libraries Required
  * https://github.com/netlabtoolkit/VarSpeedServo - Servo Controls for Feather (Non ESP32)
  * https://github.com/PaulStoffregen/Encoder - Encoder for the Dome Spin motor
  * https://github.com/reeltwo/PSController - Modified USBhost Controller for PS3 Move Nav/Xbox Controllers
  * https://github.com/ERROPiX/ESP32_AnalogWrite - Used for Proper PWM with ESP32 devices
- * 
+ * https://github.com/br3ttb/Arduino-PID-Library/ - PID Library Official
+ * http://www.billporter.info/easytransfer-arduino-library/ - Easy Transfer
 */
 
 /*
@@ -92,24 +96,20 @@ SDA - General purpose IO pin #23
   LIBRARY DEFINITIONS
 */
 
-//#ifdef XBOXCONTROLLER
-//#include <XBOXRECV.h>
-//#endif
-
-#ifdef MOVECONTROLLER
+#ifdef XBOXCONTROLLER
 /*
  Modified ESP32 BT Host Library https://github.com/reeltwo/PSController
 */
-#include <analogWrite.h>  // https://www.arduinolibraries.info/libraries/esp32-analog-write
-#include <PSController.h>
-#define DRIVE_CONTROLLER_MAC  nullptr
-#define DOME_CONTROLLER_MAC nullptr
+#include <XBOXRECV.h>
 #endif
 
+
+
+#include <analogWrite.h>  // https://www.arduinolibraries.info/libraries/esp32-analog-write
 #include <Arduino.h>
-#include <EasyTransfer.h>
+#include <EasyTransfer.h> // http://www.billporter.info/easytransfer-arduino-library/
 #include <Wire.h>
-#include <PID_v1.h>
+#include <PID_v1.h>  // https://github.com/br3ttb/Arduino-PID-Library/
 #include "wiring_private.h" // pinPeripheral() function
 
 #define BUFFER_LENGTH 64
@@ -117,6 +117,12 @@ SDA - General purpose IO pin #23
 #define driveDelay .75
 
 #ifdef MOVECONTROLLER
+/*
+ Modified ESP32 BT Host Library https://github.com/reeltwo/PSController
+*/
+#include <PSController.h>
+#define DRIVE_CONTROLLER_MAC  nullptr
+#define DOME_CONTROLLER_MAC nullptr
 PSController driveController(DRIVE_CONTROLLER_MAC); //define the driveController variable to be used against the Nav1 and Nav2 controllers.
 PSController domeController(DOME_CONTROLLER_MAC);
 #endif

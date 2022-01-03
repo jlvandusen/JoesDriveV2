@@ -1,6 +1,6 @@
 void S2S_Movement(){
-//  Using the DFRobot Motor Driver 0601 we need 3 pins
-//  VCC and GND to power the driver logic
+//  Using the DFRobot Motor Driver 0601 we need 3 pins and
+//  3.3 VCC and GND from brd to power the driver logic
 //  First pin is PWM for speed control 0 - 255
 //  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop
 
@@ -27,9 +27,9 @@ void S2S_Movement(){
   
   Setpoint1 = Output2;
   #ifndef revS2S
-  S2S_pot = map(S2S_pot, 0, 4095, 255,-255);
+  S2S_pot = map(S2S_pot, 0, 4095, 255,-255);  // ESP32 uses ADC 12bit which is interpretted 0 to 4095
   #else
-  S2S_pot = map(S2S_pot, 0, 4095, -255,255);
+  S2S_pot = map(S2S_pot, 0, 4095, -255,255); // If reverse S2S is enabled - reverse the input from the potentiometer
   #endif
   
   S2S_pot = S2S_pot-2;
@@ -47,7 +47,7 @@ void S2S_Movement(){
     #ifndef revS2S
     digitalWrite(S2S_pin_1, LOW);
     digitalWrite(S2S_pin_2, HIGH); // Motor 1 Forward
-    #else
+    #else // If reverse S2S is enabled - reverse direction
     digitalWrite(S2S_pin_1, HIGH);
     digitalWrite(S2S_pin_2, LOW); // Motor 1 Forward
     #endif
@@ -58,7 +58,7 @@ void S2S_Movement(){
     #ifndef revS2S
     digitalWrite(S2S_pin_1, HIGH);
     digitalWrite(S2S_pin_2, LOW); // Motor 1 Backwards
-    #else
+    #else // If reverse S2S is enabled - reverse direction
     digitalWrite(S2S_pin_1, LOW);
     digitalWrite(S2S_pin_2, HIGH); // Motor 1 Forward
     #endif
