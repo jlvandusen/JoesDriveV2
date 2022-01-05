@@ -10,9 +10,6 @@
  * On Line 117 - replace this with the mac of dome uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
  * Modified ESP32 BT Host Library https://github.com/reeltwo/PSController
  * 
- * Filtering
- * https://www.norwegiancreations.com/2015/10/tutorial-potentiometers-with-arduino-and-filtering/
- * 
  * Libraries Required
  * https://github.com/netlabtoolkit/VarSpeedServo - Servo Controls for Feather (Non ESP32)
  * https://github.com/PaulStoffregen/Encoder - Encoder for the Dome Spin motor
@@ -40,7 +37,7 @@
 #define debugS2S
 //#define debugSounds
 
-
+#define MP3SOUNDS // Enable qwiic/i2c communications to MP3 trigger
 #define MOVECONTROLLER
 //#define XBOXCONTROLLER   
 
@@ -96,37 +93,57 @@ SDA - General purpose IO pin #23
   LIBRARY DEFINITIONS
 */
 
-#ifdef XBOXCONTROLLER
-/*
- Modified ESP32 BT Host Library https://github.com/reeltwo/PSController
-*/
-#include <XBOXRECV.h>
-#endif
-
-
-
-#include <analogWrite.h>  // https://www.arduinolibraries.info/libraries/esp32-analog-write
-#include <Arduino.h>
-#include <EasyTransfer.h> // http://www.billporter.info/easytransfer-arduino-library/
-#include <Wire.h>
-#include <PID_v1.h>  // https://github.com/br3ttb/Arduino-PID-Library/
-#include "wiring_private.h" // pinPeripheral() function
-
-#define BUFFER_LENGTH 64
-#define TWI_BUFFER_LENGTH 64
-#define driveDelay .75
+//#ifdef XBOXCONTROLLER
+//#include <XBOXRECV.h>
+//#endif
 
 #ifdef MOVECONTROLLER
 /*
  Modified ESP32 BT Host Library https://github.com/reeltwo/PSController
 */
-#include <PSController.h>
-#define DRIVE_CONTROLLER_MAC  nullptr
-#define DOME_CONTROLLER_MAC nullptr
+
+  #include <PSController.h>
+  #define DRIVE_CONTROLLER_MAC  nullptr
+  #define DOME_CONTROLLER_MAC nullptr
+#endif
+
+#include <Arduino.h>
+#include <EasyTransfer.h> // http://www.billporter.info/easytransfer-arduino-library/
+#include <Wire.h>
+#include <PID_v1.h>  // https://github.com/br3ttb/Arduino-PID-Library/
+#include "wiring_private.h" // pinPeripheral() function
+#include <analogWrite.h>  // https://www.arduinolibraries.info/libraries/esp32-analog-write
+  
+#define BUFFER_LENGTH 64
+#define TWI_BUFFER_LENGTH 64
+#define driveDelay .75
+
+#ifdef MOVECONTROLLER
 PSController driveController(DRIVE_CONTROLLER_MAC); //define the driveController variable to be used against the Nav1 and Nav2 controllers.
 PSController domeController(DOME_CONTROLLER_MAC);
 #endif
 
+#ifdef MP3SOUNDS
+//These are the commands we can send
+#define COMMAND_STOP 0x00
+#define COMMAND_PLAY_TRACK 0x01 //Play a given track number like on a CD: regardless of file names plays 2nd file in dir.
+#define COMMAND_PLAY_FILENUMBER 0x02 //Play a file # from the root directory: 3 will play F003xxx.mp3
+#define COMMAND_PAUSE 0x03 //Will pause if playing, or starting playing if paused
+#define COMMAND_PLAY_NEXT 0x04
+#define COMMAND_PLAY_PREVIOUS 0x05
+#define COMMAND_SET_EQ 0x06
+#define COMMAND_SET_VOLUME 0x07
+#define COMMAND_GET_SONG_COUNT 0x08 //Note: This causes song to stop playing
+#define COMMAND_GET_SONG_NAME 0x09 //Fill global array with 8 characters of the song name
+#define COMMAND_GET_PLAY_STATUS 0x0A
+#define COMMAND_GET_CARD_STATUS 0x0B
+#define COMMAND_GET_VERSION 0x0C
+#define COMMAND_SET_ADDRESS 0xC7
+  byte mp3Address = 0x37; // default address for Qwiic MP3
+  byte adjustableNumber = 1;
+  int randomsound = random(1,55);
+  int sound;
+#endif
 /*
  * create UART object ************************
 */
@@ -249,7 +266,7 @@ int diff_drive; // difference of position
 double easing_drive;
 
 float IMUDeadzone = 0;  //3
-
+int S2S_potDeadzone = 3; // 3
 int current_pos_S2S;  // variables for smoothing S2S
 int target_pos_S2S;
 int S2S_pot;
@@ -286,7 +303,6 @@ void setup() {
   Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN);
 //  Serial3.begin(SERIAL3_BAUD_RATE, SWSERIAL_8N1, SERIAL3_RX_PIN, SERIAL3_TX_PIN,false,256);
 
-
   #ifdef MOVECONTROLLER
     PSController::startListening(MasterNav);
     String address = PSController::getDeviceAddress();
@@ -295,8 +311,28 @@ void setup() {
     Serial.println("Bluetooth Ready.");
   #endif
 
-//  myPID_Drive.SetMode(AUTOMATIC);
-//  myPID_Drive.SetOutputLimits(-255, 255);
+  #ifdef MP3SOUNDS
+    //Check to see if MP3 is present
+    if(mp3IsPresent() == false)
+    {
+      Serial.println("Qwiic/i2c MP3 failed to respond. Please check wiring and possibly the I2C address. Freezing...");
+      while(1);
+    }
+  
+    if(mp3HasCard() == false)
+    {
+      Serial.println("SD card missing. Freezing...");
+      while(1);
+    }
+  
+    mp3ChangeVolume(10); //Volume can be 0 (off) to 31 (max)
+  
+    Serial.print("Song count: ");
+    Serial.println(mp3SongCount());
+  
+    Serial.print("Firmware version: ");
+    Serial.println(mp3GetVersion());
+  #endif
 
   recIMU.begin(details(receiveIMUData), &Serial1); 
   rec32u4.begin(details(receiveFrom32u4Data), &Serial2);
@@ -363,7 +399,6 @@ void loop() {
     drive_Movement(); 
     sendDataTo32u4();
     spinFlywheel();
-    sounds(); 
     if(currentMillis - lastPrintMillis >= 70) {
       lastPrintMillis = currentMillis;
       debugRoutines();

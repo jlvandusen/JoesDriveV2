@@ -1,8 +1,9 @@
 void S2S_Movement(){
-//  Using the DFRobot Motor Driver 0601 we need 3 pins and
-//  3.3 VCC and GND from brd to power the driver logic
+//  Using the DFRobot Motor Driver 0601 we need 3 pins
+//  VCC and GND to power the driver logic
 //  First pin is PWM for speed control 0 - 255
 //  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop
+//  Input1 = Potentiometer, Input2 = IMU
 
   target_pos_S2S = map(buttonsR.rightStickX, -127,127,-40,40);  //Read in the Move Controller X Axis of Right Stick and force it from 127 extremes to 40
   
@@ -17,61 +18,62 @@ void S2S_Movement(){
   
   Setpoint2 = current_pos_S2S;
   
-  S2S_pot = analogRead(S2SPot_pin);   // read S2S pot
-  
   Input2 = (receiveIMUData.roll*-1)- IMUDeadzone;   // ****add a bit to the IMU to get the real middle point
   
   Setpoint2 = constrain(Setpoint2, -45,45);  // Allow the S2S to only move 45 each direction
   
-  PID2_S2S.Compute();
-  
+  PID2_S2S.Compute(); // Apply PID values to Joystick values
+
+  S2S_pot = analogRead(S2SPot_pin);   // read S2S pot
   Setpoint1 = Output2;
   #ifndef revS2S
-  S2S_pot = map(S2S_pot, 0, 4095, 255,-255);  // ESP32 uses ADC 12bit which is interpretted 0 to 4095
+  S2S_pot = map(S2S_pot, 0, 4095, 255,-255);
   #else
-  S2S_pot = map(S2S_pot, 0, 4095, -255,255); // If reverse S2S is enabled - reverse the input from the potentiometer
+  S2S_pot = map(S2S_pot, 0, 4095, -255,255);
   #endif
   
-  S2S_pot = S2S_pot-2;
+//  S2S_pot = S2S_pot-2;
   
-  Input1  = S2S_pot;  // Take in the value from Potentiometer
+  Input1  = S2S_pot;  // Take in the value from Potentiometer with map angle of -45 to 45
   Input1 = constrain(Input1,-45,45);
-  Setpoint1 = constrain(Setpoint1, -45,45);
+  Setpoint1 = constrain(Setpoint1, -45,45); // take in joystick values defined by the output from the Potentiometer
   Setpoint1 = map(Setpoint1,45,-45,-45,45);
   
   PID1_S2S.Compute();
-  
-  if (Output1 < 0) // decide which way to turn the wheels based on deadSpot variable
-  {
-    Output1_S2S_pwm = abs(Output1);
-    #ifndef revS2S
-    digitalWrite(S2S_pin_1, LOW);
-    digitalWrite(S2S_pin_2, HIGH); // Motor 1 Forward
-    #else // If reverse S2S is enabled - reverse direction
-    digitalWrite(S2S_pin_1, HIGH);
-    digitalWrite(S2S_pin_2, LOW); // Motor 1 Forward
-    #endif
-  }
-  else if (Output1 >= 0) // decide which way to turn the wheels based on deadSpot variable
-  { 
-    Output1_S2S_pwm = abs(Output1);
-    #ifndef revS2S
-    digitalWrite(S2S_pin_1, HIGH);
-    digitalWrite(S2S_pin_2, LOW); // Motor 1 Backwards
-    #else // If reverse S2S is enabled - reverse direction
-    digitalWrite(S2S_pin_1, LOW);
-    digitalWrite(S2S_pin_2, HIGH); // Motor 1 Forward
-    #endif
-  } 
-  else
-  {
-    digitalWrite(S2S_pin_1, LOW);
-    digitalWrite(S2S_pin_2, LOW); // Motor 1 stopped
-  }
+//  if ((Setpoint1 <= -10) && (Setpoint1 >= 10)) {
+    if (Output1 < 0) // decide which way to turn the wheels based on deadSpot variable
+    {
+      Output1_S2S_pwm = abs(Output1);
+      #ifndef revS2S
+      digitalWrite(S2S_pin_1, LOW);
+      digitalWrite(S2S_pin_2, HIGH); // S2S Left
+      #else
+      digitalWrite(S2S_pin_1, HIGH);
+      digitalWrite(S2S_pin_2, LOW); // S2S Right
+      #endif
+    }
+    else if (Output1 >= 0) // decide which way to turn the wheels based on deadSpot variable
+    { 
+      Output1_S2S_pwm = abs(Output1);
+      #ifndef revS2S
+      digitalWrite(S2S_pin_1, HIGH);
+      digitalWrite(S2S_pin_2, LOW); // S2S Right
+      #else
+      digitalWrite(S2S_pin_1, LOW);
+      digitalWrite(S2S_pin_2, HIGH); // S2S Left
+      #endif
+    } 
+    else
+    {
+      digitalWrite(S2S_pin_1, LOW);
+      digitalWrite(S2S_pin_2, LOW); // S2S Stopped (brake)
+    }
+//  }
   if (controllerConnected && enableDrive && !buttonsL.l1 && !buttonsR.l1) { // Check to ensure that L1 is not pressed on either Dome or Drive Controllers
     analogWrite(S2S_pwm, Output1_S2S_pwm);
   }
   else {
+    Output1_S2S_pwm = 0;
     digitalWrite(S2S_pin_1, LOW);
     digitalWrite(S2S_pin_2, LOW); // Motor 1 stopped
   }
@@ -87,6 +89,7 @@ void drive_Movement(){
 //    digitalWrite(Drive_pin_1, HIGH);  
 //    digitalWrite(Drive_pin_2, LOW);
 //    analogWrite(Drive_pwm, 255);
+
   target_pos_drive = map(buttonsR.rightStickY, -127,127,-65,65);
   
   easing_drive = 1000;          //modify this value for sensitivity
@@ -108,21 +111,21 @@ void drive_Movement(){
   if (Output3 <= 1) {                              // decide which way to turn the wheels based on deadSpot variable
     Output_Drive_pwm = abs(Output3);
     #ifndef revDrive
-    digitalWrite(Drive_pin_1, LOW);
-    digitalWrite(Drive_pin_2, HIGH);
+      digitalWrite(Drive_pin_1, LOW);
+      digitalWrite(Drive_pin_2, HIGH);
     #else
-    digitalWrite(Drive_pin_1, HIGH);
-    digitalWrite(Drive_pin_2, LOW);
+      digitalWrite(Drive_pin_1, HIGH);
+      digitalWrite(Drive_pin_2, LOW);
     #endif
   }
   else if (Output3 > 1) {                         // decide which way to turn the wheels based on deadSpot variable
     Output_Drive_pwm = abs(Output3);
     #ifndef revDrive
-    digitalWrite(Drive_pin_1, HIGH);  
-    digitalWrite(Drive_pin_2, LOW);
+      digitalWrite(Drive_pin_1, HIGH);  
+      digitalWrite(Drive_pin_2, LOW);
     #else
-    digitalWrite(Drive_pin_1, LOW);
-    digitalWrite(Drive_pin_2, HIGH);
+      digitalWrite(Drive_pin_1, LOW);
+      digitalWrite(Drive_pin_2, HIGH);
     #endif
   }
   else {  // Motor 1 stopped
@@ -133,6 +136,7 @@ void drive_Movement(){
     analogWrite(Drive_pwm, Output_Drive_pwm);
   }
   else {
+    Output_Drive_pwm = 0;
     digitalWrite(Drive_pin_1, LOW);
     digitalWrite(Drive_pin_2, LOW);
   }

@@ -47,7 +47,6 @@ void receiveRemote() {
     #define CHECK_BUTTON_PRESSEDR(btn) (previousStateR.btn != buttonsR.btn && buttonsR.btn)
     #define CHECK_BUTTON_PRESSEDL(btn) (previousStateL.btn != buttonsL.btn && buttonsL.btn)
 
-
     if(buttonsL.l1){ // Check if the Dome Controller L1 Button is held (Flywheel engaged)
       sendTo32u4Data.domeSpin = 0;
       sendTo32u4Data.flywheel = buttonsR.rightStickX;
@@ -69,6 +68,82 @@ void receiveRemote() {
       
     }
     
+#ifdef MP3SOUNDS
+/*
+* 
+* MP3 SOUND CONTROLS for BB8
+* 
+*/
+//    buttonsL.down = domeController.state.button.down;
+//    buttonsL.left = domeController.state.button.left;
+//    buttonsL.right = domeController.state.button.right;
+//    buttonsL.ps = domeController.state.button.ps;
+//    buttonsR.circle = driveController.state.button.circle;
+//    buttonsR.cross = driveController.state.button.cross;
+//    buttonsR.up = driveController.state.button.up;
+//    buttonsR.down = driveController.state.button.down;
+//    buttonsR.left = driveController.state.button.left;
+//    buttonsR.right = driveController.state.button.right;
+if (mp3IsPresent()) {
+  if (CHECK_BUTTON_PRESSEDL(up)) {
+    if (mp3IsPlaying() == true) mp3Stop();
+    if (CHECK_BUTTON_PRESSEDL(l1)) {
+      sound = 1;  // Play surprised!
+    } else if (CHECK_BUTTON_PRESSEDR(l1)){
+      sound = 40;  // Play surprised!
+    } else {
+    sound = randomsound;  // Play surprised!
+    }
+  } else if (CHECK_BUTTON_PRESSEDL(right)) { // check for key press (once)
+    if (mp3IsPlaying() == true) mp3Stop();
+    sound = 2;  // Play surprised!
+  } else if (CHECK_BUTTON_PRESSEDL(down)) { // check for key press (once)
+    if (mp3IsPlaying() == true) mp3Stop();
+    sound = 5;  // Play angry!
+  } else if (CHECK_BUTTON_PRESSEDL(left)) { // check for key press (once)
+    if (mp3IsPlaying() == true) mp3Stop();;
+    sound = 9;  // Play happy
+  } else if (CHECK_BUTTON_PRESSEDL(up)) { // check for key press (once)
+    if (mp3IsPlaying() == true) mp3Stop();
+    sound = 10;  // Play happy{
+  } else if (CHECK_BUTTON_PRESSEDL(right)) { // check for key press (once)
+    if (mp3IsPlaying() == true) mp3Stop();
+    sound = 2;  // Play surprised!
+  } else if (CHECK_BUTTON_PRESSEDL(down)) { // check for key press (once)
+    if (mp3IsPlaying() == true) mp3Stop();
+    sound = 5;  // Play angry!
+  } else if (CHECK_BUTTON_PRESSEDL(left)) { // check for key press (once)
+    if (mp3IsPlaying() == true) mp3Stop();
+    sound = 9;  // Play happy
+  }
+  
+  mp3PlayTrack(sound);
+  
+}
+
+#endif
+//  if(CHECK_BUTTON_PRESSEDL(up)){
+//    
+//  }
+//    if (CHECK_BUTTON_PRESSEDR(up)) { // check for key press (once)
+//      if (mp3IsPlaying() == true) {
+//        mp3Stop();
+//        
+//      } else {
+//        sound = randomsound;
+//      }
+//    }
+
+//    buttonsL.down = domeController.state.button.down;
+//    buttonsL.left = domeController.state.button.left;
+//    buttonsL.right = domeController.state.button.right;
+//    buttonsL.ps = domeController.state.button.ps;
+//    buttonsR.circle = driveController.state.button.circle;
+//    buttonsR.cross = driveController.state.button.cross;
+//    buttonsR.up = driveController.state.button.up;
+//    buttonsR.down = driveController.state.button.down;
+//    buttonsR.left = driveController.state.button.left;
+//    buttonsR.right = driveController.state.button.right;
 
 //  if(CHECK_BUTTON_PRESSEDR(l1)){
 
