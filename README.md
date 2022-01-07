@@ -1,10 +1,10 @@
 # JoesDriveV2
--Shared Code Base for Joe's Drive V2 using AdaFruit Feather CPUs and SND Boards
--This will support a complete PCB delivered solution to simplify and provide cost savings for future development.
--utilizes ESP32 and Feather based CPUs
--Simplified but adaptable Dome Controls
--Land, Sea and Air control schemas supporting Wifi, BT and more...
--This will contain all the code for my Joe's drive V2 setup.
+*Shared Code Base for Joe's Drive V2 using AdaFruit Feather CPUs and SND Boards
+*This will support a complete PCB delivered solution to simplify and provide cost savings for future development.
+*utilizes ESP32 and Feather based CPUs
+*Simplified but adaptable Dome Controls
+*Land, Sea and Air control schemas supporting Wifi, BT and more...
+*This will contain all the code for my Joe's drive V2 setup.
 
 ## Hardware setup
 This drive is everything including the kitchen sink, remote starter, easy to configure ESP32 to Move or Xbox controllers (no other hardware needed), Single PCB board with all needed connections
