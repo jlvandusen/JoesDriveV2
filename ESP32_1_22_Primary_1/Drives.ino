@@ -80,6 +80,59 @@ void S2S_Movement(){
  
 }
 
+//void S2S_Movement(){
+////  Using the DFRobot Motor Driver we need 3 pins
+////  VCC and GND to power the driver logic and must match the CPU voltage (3.3v)
+////  First pin is PWM for speed control 0 - 255
+////  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop (for ESP32 use 1 and 0)
+//
+//  if (IMUconnected){
+//  Input_S2S_Servo = receiveIMUData.roll *-1;
+//  } else {
+//    Input_S2S_Servo = Input_S2S_Servo;
+//  }
+////  if(sendTo32u4Data.moveL3 == false){
+////    buttonsR.rightStickX *= -1; 
+////  }
+//  Setpoint_S2S_Servo = map(constrain(buttonsR.rightStickX , 0 , 512), 0,512,maxS2STilt,-maxS2STilt); //- is  left, + is  right
+////  Setpoint_S2S_Servo = buttonsR.rightStickX; 
+//  myPID_S2S_Servo.Compute();
+//
+//  int S2SPot = map(analogRead(S2SPot_pin), 0, 1024, -135,135);
+////  int S2SPot = analogRead(S2SPot_pin);
+//
+////  Input_S2S_Stabilization = (map(analogRead(S2SPot_pin),0,1023,0,270)+S2S_offset)*-1; // Currently the offset is set to -120
+//  Input_S2S_Stabilization = S2SPot + S2S_offset; // -120
+////  Setpoint_S2S_Stabilization = Output_S2S_Servo;
+//  Setpoint_S2S_Stabilization = map(constrain(Output_S2S_Stabilization, -maxS2STilt,maxS2STilt), -maxS2STilt,maxS2STilt, maxS2STilt,-maxS2STilt);
+//  myPID_S2S_Stabilization.Compute(); 
+//  
+//  if(Output_S2S_Stabilization > 5 && controllerConnected && enableDrive) {
+//    digitalWrite(S2S_pin_1, 0);
+//    digitalWrite(S2S_pin_2, 1); // Motor 1 Forward
+//    analogWrite(S2S_pwm, map(abs(Output_S2S_Stabilization),255,-255,200,0));
+//  } else if(Output_S2S_Stabilization < -5 && controllerConnected && enableDrive) {
+//    digitalWrite(S2S_pin_1, 1);
+//    digitalWrite(S2S_pin_2, 0); // Motor 1 Backwards
+//    analogWrite(S2S_pwm, map(Output_S2S_Stabilization,-255,255,200,0));
+//    
+//  } else {
+//    digitalWrite(S2S_pin_1, 0);
+//    digitalWrite(S2S_pin_2, 0); // Motor 1 stopped
+//  }
+//
+//#ifdef debugS2SPot
+//  SerialDebug.print("S2SPOT_IN_PID:"); SerialDebug.print('\t');
+//  SerialDebug.println(Input_S2S_Stabilization);
+//  SerialDebug.print("S2SPOT_PIN:"); SerialDebug.print('\t');
+//  SerialDebug.println(S2SPot_pin);
+//  SerialDebug.print("S2SPOT_PWM:"); SerialDebug.print('\t');
+//  SerialDebug.println(S2SPot);
+//  SerialDebug.print("[2J"); // clear screen command
+//  SerialDebug.write(27);    // ESC command
+//#endif
+//
+//}
 
 void drive_Movement(){
 //  Using the DFRobot Motor Driver 0601 we need 3 pins
@@ -174,4 +227,45 @@ void spinFlywheel() {
     digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Stopped
   }
   
+}
+
+void autoDisableMotors(){
+  // buttonsR.rightStickY = Main Drive Forward and Backward
+  // buttonsR.rightStickX = S2S Steering using tilt
+  if((buttonsR.rightStickY > joystickDeadZoneRange && buttonsR.rightStickY < joystickDeadZoneRange) && (buttonsR.rightStickX > joystickDeadZoneRange && buttonsR.rightStickX < joystickDeadZoneRange) && (buttonsL.leftStickX > joystickDeadZoneRange && buttonsL.leftStickX < joystickDeadZoneRange) && (buttonsL.leftStickY < joystickDeadZoneRange && buttonsL.leftStickY > joystickDeadZoneRange) && (autoDisableState == 0)) {
+    autoDisableMotorsMillis = millis();
+    autoDisableState = 1;
+  } else if(buttonsR.rightStickY < joystickDeadZoneRange || buttonsR.rightStickY > joystickDeadZoneRange || buttonsR.rightStickY < joystickDeadZoneRange || buttonsR.rightStickY > joystickDeadZoneRange || buttonsL.leftStickX < joystickDeadZoneRange || buttonsL.leftStickX > joystickDeadZoneRange || buttonsL.leftStickY > joystickDeadZoneRange || buttonsL.leftStickY < joystickDeadZoneRange) {
+    autoDisableState = 0;     
+    autoDisableDoubleCheck = 0; 
+    autoDisable = 0;  
+  }
+          
+  if(autoDisableState == 1 && (millis() - autoDisableMotorsMillis >= 3000) && Output_S2S_Stabilization < 25 && Output_Drive_Stabilization < 8){
+    digitalWrite(Drive_pin_1, 0);
+    digitalWrite(Drive_pin_2, 0);
+    digitalWrite(S2S_pin_1, 0);
+    digitalWrite(S2S_pin_2, 0);
+    digitalWrite(flyWheelMotor_pin_A, 0);
+    digitalWrite(flyWheelMotor_pin_B, 0);
+    autoDisable = 1;
+      
+  }else if(Output_S2S_Stabilization > 50 || Output_Drive_Stabilization > 20){
+    autoDisableState = 0;
+    autoDisableDoubleCheck = 0;  
+    autoDisable = 0;    
+  }else if((Output_S2S_Stabilization > 25 || Output_Drive_Stabilization > 8) && autoDisableDoubleCheck == 0){
+    autoDisableDoubleCheckMillis = millis();
+    autoDisableDoubleCheck = 1;
+     
+  } else if((autoDisableDoubleCheck == 1) && (millis() - autoDisableDoubleCheckMillis >= 100)){
+    if(Output_S2S_Stabilization > 30 || Output_Drive_Stabilization > 8){ 
+      autoDisableState = 0;
+      autoDisableDoubleCheck = 0;
+      autoDisable = 0;
+    }else{
+      autoDisableDoubleCheck = 0;
+    }
+  } 
+      
 }
