@@ -28,6 +28,11 @@ Utilizes easy to configure ESPNOW technologies to communicate between body and d
 The following are the new features that I have added into my drive to make it more usable.
 Feature | Description
 ------- | -----------
+All-In_One PCB | The Main board has buck converters built right in with all necessary connections over PIN and JST XH.  48V in and supports 5v, 6v and 9v outputs.
+i2c Sound Control | Utilizes standard (non pin triggered) i2c sound controls allowing for full flexibility and adaptable sound choices based on button combination and actions.
+CHain Drive! | The main drive is handled by chain drive to solve slipping seen in previous versions as well as to provide a more stable drive experience.
+S2S Gearing | Utilizes gear for stable side to side controls (similar to Bruton's design)
+ENC Dome Control | Utilizes ENC built in motor controls for exact directional control of dome rotation.
 v2 Flywheel | Very low profile (higher than the battery compartment - thus allowing for out of ball testing and weight disbursement.
 DFRobot 0601 | Using the DFRobot Motor Driver 0601 H Bridge Motor driver
 Mp3 Qwiic/i2c trigger | Code that drives the custom Mp3 trigger for full sound controls via multi combinations
