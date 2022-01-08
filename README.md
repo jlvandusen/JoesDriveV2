@@ -6,9 +6,7 @@
 * Land, Sea and Air control schemas supporting Wifi, BT and more...
 * This will contain all the code for my Joe's drive V2 setup.
 
-<p align="left" width="100%">
 ![JoesDrivev2](https://github.com/jlvandusen/JoesDriveV2/blob/main/Photos/AssembledDrive.jpg)
-</p>
 
 ## Hardware setup
 This drive is everything including the kitchen sink, remote starter, easy to configure ESP32 to Move or Xbox controllers (no other hardware needed), Single PCB board with all needed connections
