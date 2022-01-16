@@ -7,14 +7,10 @@
  * ESp32 Board Libraries: https://learn.adafruit.com/adafruit-huzzah32-esp32-feather/pinouts?view=all#using-with-arduino-ide
  * 
  * Utilizes ESP32NOW technology over WiFi to talk between Dome and Body - need to capture the Wifi MAC during bootup.
- * On Line 128 - replace the mac of dome ESP32 uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
- * https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
- * 
- * Playstation Move Navigation Controller
+ * On Line 117 - replace this with the mac of dome uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
  * Modified ESP32 BT Host Library https://github.com/reeltwo/PSController
  * 
  * Libraries Required
- * https://github.com/sparkfun/SparkFun_Qwiic_MP3_Trigger_Arduino_Library - Sparkfun MP3 Trigger using i2c / qwiic
  * https://github.com/netlabtoolkit/VarSpeedServo - Servo Controls for Feather (Non ESP32)
  * https://github.com/PaulStoffregen/Encoder - Encoder for the Dome Spin motor
  * https://github.com/reeltwo/PSController - Modified USBhost Controller for PS3 Move Nav/Xbox Controllers
@@ -32,17 +28,15 @@
 #define DEBUG_PRINT(s) Serial.print(s)
 #define SerialDebug Serial
 
-
-//#define getESPNOWMac // used by ESPNOW to show MAC Address of HUZZAH BT
-//#define debugESPNOW
 //#define debug32u4
 //#define debugRemote
 //#define debugIMU
 //#define debugPOTS
 //#define debugMainDrive
 //#define debugFlywheel
-#define debugS2S
+//#define debugS2S
 //#define debugSounds
+#define debugEasyTransfer
 
 #define MP3SOUNDS // Enable qwiic/i2c communications to MP3 trigger
 #define MOVECONTROLLER
@@ -82,9 +76,6 @@
 //#define revDrive
 #define revGyro
 
-#define maxS2STilt 20 // max tilt using the joystick; max is 25
-
-
 /*
  * ESP32 FEATHER INFORMATION
  * Chip used: Adafruit ESP32 HUZZAH32 with stacking headers https://www.adafruit.com/product/3619
@@ -123,27 +114,32 @@ SDA - General purpose IO pin #23
 #include <PID_v1.h>  // https://github.com/br3ttb/Arduino-PID-Library/
 #include "wiring_private.h" // pinPeripheral() function
 #include <analogWrite.h>  // https://www.arduinolibraries.info/libraries/esp32-analog-write
-
-// Complete Instructions to Get and Change ESP MAC Address: https://RandomNerdTutorials.com/get-change-esp32-esp8266-mac-address-arduino/
-// As per the following walkthrough https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
-#include <esp_now.h>
-#include "WiFi.h"
-// REPLACE WITH THE MAC Address of your receiver - the other ESP32 in BB8 Dome (loopback {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};) for testing purposes
-uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
-
-
-#define BUFFER_LENGTH 64
-#define TWI_BUFFER_LENGTH 64
+  
+#define BUFFER_LENGTH 128 // 64
+#define TWI_BUFFER_LENGTH 128 //64
 #define driveDelay .75
 
 #ifdef MOVECONTROLLER
-  PSController driveController(DRIVE_CONTROLLER_MAC); //define the driveController variable to be used against the Nav1 and Nav2 controllers.
-  PSController domeController(DOME_CONTROLLER_MAC);
+PSController driveController(DRIVE_CONTROLLER_MAC); //define the driveController variable to be used against the Nav1 and Nav2 controllers.
+PSController domeController(DOME_CONTROLLER_MAC);
 #endif
 
 #ifdef MP3SOUNDS
-  #include "SparkFun_Qwiic_MP3_Trigger_Arduino_Library.h" // http://librarymanager/All#SparkFun_MP3_Trigger
-  MP3TRIGGER mp3;
+//These are the commands we can send
+#define COMMAND_STOP 0x00
+#define COMMAND_PLAY_TRACK 0x01 //Play a given track number like on a CD: regardless of file names plays 2nd file in dir.
+#define COMMAND_PLAY_FILENUMBER 0x02 //Play a file # from the root directory: 3 will play F003xxx.mp3
+#define COMMAND_PAUSE 0x03 //Will pause if playing, or starting playing if paused
+#define COMMAND_PLAY_NEXT 0x04
+#define COMMAND_PLAY_PREVIOUS 0x05
+#define COMMAND_SET_EQ 0x06
+#define COMMAND_SET_VOLUME 0x07
+#define COMMAND_GET_SONG_COUNT 0x08 //Note: This causes song to stop playing
+#define COMMAND_GET_SONG_NAME 0x09 //Fill global array with 8 characters of the song name
+#define COMMAND_GET_PLAY_STATUS 0x0A
+#define COMMAND_GET_CARD_STATUS 0x0B
+#define COMMAND_GET_VERSION 0x0C
+#define COMMAND_SET_ADDRESS 0xC7
   byte mp3Address = 0x37; // default address for Qwiic MP3
   byte adjustableNumber = 1;
   int randomsound = random(1,55);
@@ -155,40 +151,6 @@ uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 EasyTransfer recIMU; 
 EasyTransfer send32u4;
 EasyTransfer rec32u4; 
-
-/*
- * Create receive DOME ESPNOW Objects
-*/
-
-// Define variables to store incoming readings
-int incomingPSI = 0;
-byte incomingHP = 0;
-float incomingBAT = 0; 
-//int incomingDIS = 0;     
-
-// Define variables to store readings to be sent
-int sendPSI = 0;
-byte sendBTN = 0;
-float sendBAT = 0;    
-
-// Variable to store if sending data was successful
-String success;
-
-
-// Structure to send data
-// Must match the receiver structure
-typedef struct struct_message {
-    int psi;
-    byte btn;
-    float bat;
-//    int dis;
-} struct_message;
-// Create a struct_message called outgoingReadings to hold sensor readings
-struct_message outgoingReadings;
-
-// Create a struct_message to hold incoming sensor readings
-struct_message incomingReadings;
-
 
 /*
  * Create receive IMU from Trinket M0 Objects
@@ -226,16 +188,16 @@ struct SEND_DATA_STRUCTURE_32u4{
   bool driveEnabled;
   int8_t domeSpin;
   bool moveL3; // xbox L3 equivilent
-  int8_t flywheel;
+//  int8_t flywheel;
   bool moveR3; // xboxR3 equivilent
   int8_t leftStickX;
   int8_t leftStickY;
 //  int8_t rightStickX;
 //  int8_t rightStickY;
-  bool psiFlash;
+  int8_t soundcmd;
+  int8_t psiFlash;
   float pitch;
   float roll; 
-//  int8_t soundcmd; 
 };
 #endif
 
@@ -278,7 +240,7 @@ int8_t joystickDeadZoneRange = 25;  // For controllers that centering problems, 
  * Create Serial 2 to send to the 32u4 / ESP32-S2 (qwiic)
 */
 
-#define SERIAL2_BAUD_RATE 74880
+#define SERIAL2_BAUD_RATE 57600  // 74880 57600 78440
 #define SERIAL2_RX_PIN 13
 #define SERIAL2_TX_PIN 12
 
@@ -293,9 +255,8 @@ SoftwareSerial Serial3;
 #define SERIAL3_TX_PIN 23 //SDA - General purpose IO pin #23
 
 unsigned long currentMillis, IMUmillis, lastLoopMillis, lastDomeMillis, rec32u4Millis, lastPrintMillis; 
-bool IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected, DomeServoMode, enableDrive, reverseDrive;
-bool enabledDrive, autoDisableDoubleCheck, autoDisable, autoDisableState;
-unsigned long autoDisableMotorsMillis, autoDisableDoubleCheckMillis;
+bool IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected, DomeServoMode, enableDrive, reverseDrive, enabledDrive;
+
 
 //int pot_S2S;   // target position/inout
 
@@ -315,6 +276,7 @@ double easing_S2S;
 
 int Output_flywheel_pwm; // variables for PWM controls of flywheel
 int Output_domeSpin_pwm;
+int8_t flywheel;
 
 double Pk1 = 13;  //13
 double Ik1 = 0;   //0
@@ -334,65 +296,6 @@ double Dk3 = 0;
 double Setpoint3, Input3, Output3, Output_Drive_pwm;    // PID variables - Main drive motor
 PID PID_Drive(&Input3, &Output3, &Setpoint3, Pk3, Ik3 , Dk3, DIRECT);    // Main drive motor
 
-/*
- * Create PID tuning configuraitons for the S2S, Main Drive
-*/
-
-//Specify PID and initial tuning parameters for S2S (Side to Side)
-//double Kp_S2S_Servo=.5, Ki_S2S_Servo=0, Kd_S2S_Servo=0;
-double Kp_S2S_Servo=14, Ki_S2S_Servo=0, Kd_S2S_Servo=0;
-double Setpoint_S2S_Servo, Input_S2S_Servo, Output_S2S_Servo;
-PID myPID_S2S_Servo(&Input_S2S_Servo, &Output_S2S_Servo, &Setpoint_S2S_Servo, Kp_S2S_Servo, Ki_S2S_Servo, Kd_S2S_Servo, DIRECT);
-
-//Specify PID and initial tuning parameters for S2S (Side to Side) Stabilization
-//double Kp_S2S_Stabilization=10, Ki_S2S_Stabilization=0, Kd_S2S_Stabilization=0;
-double Kp_S2S_Stabilization=.5, Ki_S2S_Stabilization=0, Kd_S2S_Stabilization=.01;
-double Input_S2S_Stabilization, Output_S2S_Stabilization, Setpoint_S2S_Stabilization;
-PID myPID_S2S_Stabilization(&Input_S2S_Stabilization, &Output_S2S_Stabilization, &Setpoint_S2S_Stabilization, Kp_S2S_Stabilization, Ki_S2S_Stabilization, Kd_S2S_Stabilization, DIRECT);
-
-//Specify PID and initial tuning parameters for Drive (Drive)
-double Kp_Drive=5, Ki_Drive=0, Kd_Drive=0;
-double Setpoint_Drive, Input_Drive, Output_Drive, Setpoint_Drive_In;
-PID myPID_Drive(&Input_Drive, &Output_Drive, &Setpoint_Drive, Kp_Drive, Ki_Drive, Kd_Drive, DIRECT);
-
-//Specify PID and initial tuning parameters for Drive (Drive) Stabalization
-double Kp_Drive_Stabilization=.5, Ki_Drive_Stabilization=0, Kd_Drive_Stabilization=0;
-double Input_Drive_Stabilization, Output_Drive_Stabilization, Setpoint_Drive_Stabilization;
-PID myPID_Drive_Stabilization(&Input_Drive_Stabilization, &Output_Drive_Stabilization, &Setpoint_Drive_Stabilization, Kp_Drive_Stabilization, Ki_Drive_Stabilization, Kd_Drive_Stabilization, DIRECT);
-
-/*  
- *  ESPNOW Callback when data is received
- *  See walkthrough: https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
- */
-void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
-  memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
-  #ifdef debugESPNOW
-  Serial.print("Bytes received: ");
-  Serial.println(len);
-  #endif
-  incomingPSI = incomingReadings.psi;
-  incomingHP  = incomingReadings.btn;
-  incomingBAT = incomingReadings.bat;
-//  incomingDIS = incomingReadings.dis;
-}
-
-
-/* 
- *  ESPNOW Callback when data is sent
- */
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  #ifdef debugESPNOW
-  Serial.print("\r\nLast Packet Send Status:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-  if (status ==0){
-    success = "Delivery Success :)";
-  }
-  else{
-    success = "Delivery Fail :(";
-  }
-  #endif
-}
-
 void setup() {
   
   delay(5000); // Wait for Boot
@@ -411,26 +314,7 @@ void setup() {
   #endif
 
   #ifdef MP3SOUNDS
-    //Check to see if MP3 is present
-    if(mp3.begin() == false)
-    {
-      Serial.println("Qwiic/i2c MP3 failed to respond. Please check wiring and possibly the I2C address. Freezing...");
-      while(1);
-    }
-  
-    if(mp3.hasCard() == false)
-    {
-      Serial.println("SD card missing. Freezing...");
-      while(1);
-    }
-  
-    mp3.setVolume(10); //Volume can be 0 (off) to 31 (max)
-  
-    Serial.print("Song count: ");
-    Serial.println(mp3.getSongCount());
-  
-    Serial.print("Firmware version: ");
-    Serial.println(mp3.getVersion());
+
   #endif
 
   recIMU.begin(details(receiveIMUData), &Serial1); 
@@ -449,8 +333,8 @@ void setup() {
   PID_Drive.SetOutputLimits(-255, 255);
   PID_Drive.SetSampleTime(20);
     
-
-  #ifdef debug32u4 // Lets do some spot checks on the connections to other chips/CPUs
+// Lets do some spot checks on the connections to other chips/CPUs
+  #ifdef debug32u4
    if(!rec32u4.receiveData()){
         feather2Connected = false; 
         Serial.println("32u4 Not Connected");
@@ -462,7 +346,7 @@ void setup() {
       }
     }
   #endif
-  for (int i = 0; i <= 10000; i++) { // Lets do some spot checks on the connections to other chips/CPUs
+  for (int i = 0; i <= 10000; i++) {
     IMUmillis = currentMillis; 
     IMUconnected = false; 
     Serial.println("IMU Not Connected");
@@ -474,37 +358,6 @@ void setup() {
     }
   }
 
-
-#ifdef getESPNOWMac
-  WiFi.mode(WIFI_MODE_STA);
-  Serial.print("Please write down the following WIFI BODY MAC: ");
-  Serial.println(WiFi.macAddress());
-#endif
-
-//  WiFi.mode(WIFI_STA); // Set device as a Wi-Fi Station
-//  Serial.println("WIFI ESPNOW preparing...");
-//Init ESP-NOW
-  if (esp_now_init() != ESP_OK) {
-    Serial.println("Error initializing ESP-NOW");
-    return;
-  } else Serial.println("Success initializing ESP-NOW");
-
-// Once ESPNow is successfully Init, we will register for Send CB to
-// get the status of Trasnmitted packet
-  esp_now_register_send_cb(OnDataSent);
-
-  esp_now_peer_info_t peerInfo; // Register peer
-  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
-  peerInfo.channel = 0;  
-  peerInfo.encrypt = false;
-    
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) { // Add peer      
-    Serial.println("Failed to add peer");
-    return;
-  } else Serial.println("Found dome ESP32 peer and added over ESPNOW");
-  
-  esp_now_register_recv_cb(OnDataRecv); // Register for a callback function that will be called when data is received
-  
   /* Set the pins to correct method for use for the DFRobot Motor Driver */
   pinMode(S2S_pwm, OUTPUT);  // Speed Of Motor2 on Motor Driver 1 
   pinMode(S2S_pin_1, OUTPUT);  // Direction
@@ -525,7 +378,6 @@ void loop() {
     lastLoopMillis = currentMillis; 
     receiveIMU();
     receiveRemote();
-    sendReadings();
     S2S_Movement(); 
     drive_Movement(); 
     sendDataTo32u4();
@@ -641,55 +493,3 @@ void batterycheck() {
     }
   }
 }
-
-/*  
- *  ESPNOW Send readings back to the Body ESP32
- *  See walkthrough: https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
- */
- 
-void sendReadings() {
-  outgoingReadings.psi = sendPSI;
-  outgoingReadings.btn = sendBTN;
-  outgoingReadings.bat = sendBAT;
-  // Send message via ESP-NOW
-  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &outgoingReadings, sizeof(outgoingReadings));
-  #ifdef debugESPNOW
-  if (result == ESP_OK) {
-    Serial.println("Sent with success");
-  } else Serial.println("Error sending the data");
-  #endif
-}
-
-
-///*  
-// *  ESPNOW Callback when data is received
-// *  See walkthrough: https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
-// */
-//void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
-//  memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
-//  #ifdef debugESPNOW
-//  Serial.print("Bytes received: ");
-//  Serial.println(len);
-//  #endif
-//  incomingPSI = incomingReadings.psi;
-//  incomingHP  = incomingReadings.btn;
-//  incomingBAT = incomingReadings.bat;
-////  incomingDIS = incomingReadings.dis;
-//}
-//
-//
-///* 
-// *  ESPNOW Callback when data is sent
-// */
-//void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-//  #ifdef debugESPNOW
-//  Serial.print("\r\nLast Packet Send Status:\t");
-//  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-//  if (status ==0){
-//    success = "Delivery Success :)";
-//  }
-//  else{
-//    success = "Delivery Fail :(";
-//  }
-//  #endif
-//}

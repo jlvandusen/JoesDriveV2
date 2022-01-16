@@ -47,18 +47,18 @@ void receiveRemote() {
     #define CHECK_BUTTON_PRESSEDR(btn) (previousStateR.btn != buttonsR.btn && buttonsR.btn)
     #define CHECK_BUTTON_PRESSEDL(btn) (previousStateL.btn != buttonsL.btn && buttonsL.btn)
 
-    if(buttonsL.l1){ // Check if the Dome Controller L1 Button is held (Flywheel engaged)
+    if(buttonsL.l1){ // Check if the Dome Controller L1 Button is held (Flywheel engaged, dome disengaged)
       sendTo32u4Data.domeSpin = 0;
-      sendTo32u4Data.flywheel = buttonsR.rightStickX;
+      flywheel = buttonsR.rightStickX;
       Output_flywheel_pwm = map(buttonsR.rightStickX,-127,127,-255,255);
     }
     else {
-      sendTo32u4Data.flywheel = 0;
+//      sendTo32u4Data.flywheel = 0;
       Output_flywheel_pwm = 0;
       
     }
-    if(buttonsR.l1){ // Check if the Dome Controller L1 Button is held (Flywheel engaged)
-      sendTo32u4Data.flywheel = 0;
+    if(buttonsR.l1){ // Check if the drive Controller L1 Button is held (Flywheel disengaged, dome engaged)
+      flywheel = 0;
       sendTo32u4Data.domeSpin = buttonsR.rightStickX;
       Output_domeSpin_pwm = map(buttonsR.rightStickX,-127,127,-255,255);
     }
@@ -68,63 +68,63 @@ void receiveRemote() {
       
     }
     
-#ifdef MP3SOUNDS
-/*
-* 
-* MP3 SOUND CONTROLS for BB8
-* 
-*/
-
-//  Example Buttons from Move Controller
-//  buttonsL.down = domeController.state.button.down;
-//  buttonsL.left = domeController.state.button.left;
-//  buttonsL.right = domeController.state.button.right;
-//  buttonsL.ps = domeController.state.button.ps;
-//  buttonsR.circle = driveController.state.button.circle;
-//  buttonsR.cross = driveController.state.button.cross;
-//  buttonsR.up = driveController.state.button.up;
-//  buttonsR.down = driveController.state.button.down;
-//  buttonsR.left = driveController.state.button.left;
-//  buttonsR.right = driveController.state.button.right;
-
-if (mp3.isConnected()) {  // check if the MP3 Trigger is connected via i2c
-  if (CHECK_BUTTON_PRESSEDL(up)) {
-    if (mp3.isPlaying() == true) mp3.stop();  // if track is playing stop it and play next else play a track
-    if (CHECK_BUTTON_PRESSEDL(l1)) {
-      sound = 1;  // Play surprised!
-    } else if (CHECK_BUTTON_PRESSEDR(l1)){
-      sound = 40;  // Play surprised!
-    } else {
-    sound = randomsound;  // Play surprised!
-    }
-  } else if (CHECK_BUTTON_PRESSEDL(right)) { // check for key press (once)
-    if (mp3.isPlaying() == true) mp3.stop();
-    sound = 2;  // Play surprised!
-  } else if (CHECK_BUTTON_PRESSEDL(down)) { 
-    if (mp3.isPlaying() == true) mp3.stop();
-    sound = 5;  // Play angry!
-  } else if (CHECK_BUTTON_PRESSEDL(left)) { 
-    if (mp3.isPlaying() == true) mp3.stop();;
-    sound = 9;  // Play happy
-  } else if (CHECK_BUTTON_PRESSEDL(up)) { 
-    if (mp3.isPlaying() == true) mp3.stop();
-    sound = 10;  // Play happy{
-  } else if (CHECK_BUTTON_PRESSEDL(right)) { 
-    if (mp3.isPlaying() == true) mp3.stop();
-    sound = 2;  // Play surprised!
-  } else if (CHECK_BUTTON_PRESSEDL(down)) { 
-    if (mp3.isPlaying() == true) mp3.stop();
-    sound = 5;  // Play angry!
-  } else if (CHECK_BUTTON_PRESSEDL(left)) { 
-    if (mp3.isPlaying() == true) mp3.stop();
-    sound = 9;  // Play happy
-  }
-//  if (mp3.isPlaying() == true) mp3.stop(); // if track is playing stop it and play next else play a track
-  mp3.playTrack(sound);
-  
-}
-
-#endif
+//#ifdef MP3SOUNDS
+///*
+//* 
+//* MP3 SOUND CONTROLS for BB8
+//* 
+//*/
+//
+////  Example Buttons from Move Controller
+////  buttonsL.down = domeController.state.button.down;
+////  buttonsL.left = domeController.state.button.left;
+////  buttonsL.right = domeController.state.button.right;
+////  buttonsL.ps = domeController.state.button.ps;
+////  buttonsR.circle = driveController.state.button.circle;
+////  buttonsR.cross = driveController.state.button.cross;
+////  buttonsR.up = driveController.state.button.up;
+////  buttonsR.down = driveController.state.button.down;
+////  buttonsR.left = driveController.state.button.left;
+////  buttonsR.right = driveController.state.button.right;
+//
+//if (mp3.isConnected()) {  // check if the MP3 Trigger is connected via i2c
+//  if (CHECK_BUTTON_PRESSEDL(up)) {
+//    if (mp3.isPlaying() == true) mp3.stop();  // if track is playing stop it and play next else play a track
+//    if (CHECK_BUTTON_PRESSEDL(l1)) {
+//      sound = 1;  // Play surprised!
+//    } else if (CHECK_BUTTON_PRESSEDR(l1)){
+//      sound = 40;  // Play surprised!
+//    } else {
+//    sound = randomsound;  // Play surprised!
+//    }
+//  } else if (CHECK_BUTTON_PRESSEDL(right)) { // check for key press (once)
+//    if (mp3.isPlaying() == true) mp3.stop();
+//    sound = 2;  // Play surprised!
+//  } else if (CHECK_BUTTON_PRESSEDL(down)) { 
+//    if (mp3.isPlaying() == true) mp3.stop();
+//    sound = 5;  // Play angry!
+//  } else if (CHECK_BUTTON_PRESSEDL(left)) { 
+//    if (mp3.isPlaying() == true) mp3.stop();;
+//    sound = 9;  // Play happy
+//  } else if (CHECK_BUTTON_PRESSEDL(up)) { 
+//    if (mp3.isPlaying() == true) mp3.stop();
+//    sound = 10;  // Play happy{
+//  } else if (CHECK_BUTTON_PRESSEDL(right)) { 
+//    if (mp3.isPlaying() == true) mp3.stop();
+//    sound = 2;  // Play surprised!
+//  } else if (CHECK_BUTTON_PRESSEDL(down)) { 
+//    if (mp3.isPlaying() == true) mp3.stop();
+//    sound = 5;  // Play angry!
+//  } else if (CHECK_BUTTON_PRESSEDL(left)) { 
+//    if (mp3.isPlaying() == true) mp3.stop();
+//    sound = 9;  // Play happy
+//  }
+////  if (mp3.isPlaying() == true) mp3.stop(); // if track is playing stop it and play next else play a track
+//  mp3.playTrack(sound);
+//  
+//}
+//
+//#endif
 //  if(CHECK_BUTTON_PRESSEDL(up)){
 //    
 //  }

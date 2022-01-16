@@ -26,6 +26,21 @@
     
   #endif
 
+  #ifdef debugEasyTransfer
+  
+     SerialDebug.print(F("driveEnabled: ")); Serial.print(sendTo32u4Data.driveEnabled); Serial.print("\t"); 
+     SerialDebug.print(F("domeSpin: ")); Serial.print(sendTo32u4Data.domeSpin); Serial.print("\t"); 
+     SerialDebug.print(F("MoveL3: ")); Serial.print(sendTo32u4Data.moveL3); Serial.print("\t"); 
+//     SerialDebug.print(F("flywheel: ")); Serial.print(sendTo32u4Data.flywheel); Serial.print("\t"); 
+     SerialDebug.print(F("moveR3: ")); Serial.print(sendTo32u4Data.moveR3); Serial.print("\t"); 
+     SerialDebug.print(F("leftStickX: ")); Serial.print(sendTo32u4Data.leftStickX); Serial.print("\t"); 
+     SerialDebug.print(F("leftStickY: ")); Serial.print(sendTo32u4Data.leftStickY); Serial.print("\t"); 
+     SerialDebug.print(F("soundcmd: ")); Serial.print(sendTo32u4Data.soundcmd); Serial.print("\t"); 
+     SerialDebug.print(F("psiFlash: ")); Serial.print(sendTo32u4Data.psiFlash); Serial.print("\t"); 
+     SerialDebug.print(F("pitch: ")); Serial.print(sendTo32u4Data.pitch); Serial.print("\t"); 
+     SerialDebug.print(F("roll: ")); Serial.print(sendTo32u4Data.roll); SerialDebug.println('\t');
+  #endif
+
   #ifdef debugIMU
     SerialDebug.print(IMUconnected); SerialDebug.print('\t');
     SerialDebug.print(receiveIMUData.pitch); SerialDebug.print('\t');
