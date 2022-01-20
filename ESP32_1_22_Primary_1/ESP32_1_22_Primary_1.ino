@@ -124,27 +124,7 @@ PSController driveController(DRIVE_CONTROLLER_MAC); //define the driveController
 PSController domeController(DOME_CONTROLLER_MAC);
 #endif
 
-#ifdef MP3SOUNDS
-//These are the commands we can send
-#define COMMAND_STOP 0x00
-#define COMMAND_PLAY_TRACK 0x01 //Play a given track number like on a CD: regardless of file names plays 2nd file in dir.
-#define COMMAND_PLAY_FILENUMBER 0x02 //Play a file # from the root directory: 3 will play F003xxx.mp3
-#define COMMAND_PAUSE 0x03 //Will pause if playing, or starting playing if paused
-#define COMMAND_PLAY_NEXT 0x04
-#define COMMAND_PLAY_PREVIOUS 0x05
-#define COMMAND_SET_EQ 0x06
-#define COMMAND_SET_VOLUME 0x07
-#define COMMAND_GET_SONG_COUNT 0x08 //Note: This causes song to stop playing
-#define COMMAND_GET_SONG_NAME 0x09 //Fill global array with 8 characters of the song name
-#define COMMAND_GET_PLAY_STATUS 0x0A
-#define COMMAND_GET_CARD_STATUS 0x0B
-#define COMMAND_GET_VERSION 0x0C
-#define COMMAND_SET_ADDRESS 0xC7
-  byte mp3Address = 0x37; // default address for Qwiic MP3
-  byte adjustableNumber = 1;
-  int randomsound = random(1,55);
-  int sound;
-#endif
+
 /*
  * create UART object ************************
 */
@@ -188,12 +168,9 @@ struct SEND_DATA_STRUCTURE_32u4{
   bool driveEnabled;
   int8_t domeSpin;
   bool moveL3; // xbox L3 equivilent
-//  int8_t flywheel;
   bool moveR3; // xboxR3 equivilent
   int8_t leftStickX;
   int8_t leftStickY;
-//  int8_t rightStickX;
-//  int8_t rightStickY;
   int8_t soundcmd;
   int8_t psiFlash;
   float pitch;

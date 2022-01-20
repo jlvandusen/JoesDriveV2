@@ -30,6 +30,7 @@
 //#define debugHALLFull
 //#define debugHALL
 //#define debugENC
+//#define debugSounds
 
 /*  Controller types: Currently PS3 Move Controllers and PS3/4 Joystick supported
  *  Still to do: Xbox Controller, PS3,4 and 5 Controllers
@@ -37,6 +38,13 @@
 
 #define MOVECONTROLLER
 //#define XBOXCONTROLLER   
+
+/*  MP3 Trigger types supported
+ *  Still to do: VS105 and Zio
+*/
+#define MP3Sparkfun // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
+//#define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
+//#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Feather VS105
 
 /* Debug Printlines */
 #define DEBUG_PRINTLN(s) Serial.println(s)
@@ -46,8 +54,8 @@
 /*
  * PIN DEFINITIONS
 */
-#define motorEncoder_pin_A 18 //3 18 - 32u4 RF, 14 - 32u4 Proto M0
-#define motorEncoder_pin_B 19 //2 19 - 32u4 RF, 15 - 32u4 Proto M0
+#define motorEncoder_pin_A 14 //3 18 - 32u4 RF, 14 - 32u4 Proto M0 Feather M0
+#define motorEncoder_pin_B 15 //2 19 - 32u4 RF, 15 - 32u4 Proto M0 Feather M0
 #define domeMotor_pwm 10  // 10 - M0 Proto | 21 - 32u4
 #define domeMotor_pin_A 9 //  9 - M0 Proto | 22 - 32u4
 #define domeMotor_pin_B 6 //  6 - M0 Proto | 23 - 32u4
@@ -65,6 +73,39 @@
 #define leftServoOffset -7
 #define rightServoOffset 0
 
+#ifdef MP3Zio
+#include <Wire.h>
+//These are the commands we can send
+#define COMMAND_STOP 0x00
+#define COMMAND_PLAY_TRACK 0x01 //Play a given track number like on a CD: regardless of file names plays 2nd file in dir.
+#define COMMAND_PLAY_FILENUMBER 0x02 //Play a file # from the root directory: 3 will play F003xxx.mp3
+#define COMMAND_PAUSE 0x03 //Will pause if playing, or starting playing if paused
+#define COMMAND_PLAY_NEXT 0x04
+#define COMMAND_PLAY_PREVIOUS 0x05
+#define COMMAND_SET_EQ 0x06
+#define COMMAND_SET_VOLUME 0x07
+#define COMMAND_GET_SONG_COUNT 0x08 //Note: This causes song to stop playing
+#define COMMAND_GET_SONG_NAME 0x09 //Fill global array with 8 characters of the song name
+#define COMMAND_GET_PLAY_STATUS 0x0A
+#define COMMAND_GET_CARD_STATUS 0x0B
+#define COMMAND_GET_VERSION 0x0C
+#define COMMAND_SET_ADDRESS 0xC7
+  byte mp3Address = 0x37; // default address for Qwiic MP3
+  byte adjustableNumber = 1;
+  int randomsound = random(1,55);
+  int8_t sound;
+#endif
+
+#ifdef MP3Sparkfun
+  #include <Wire.h>
+  #include "SparkFun_Qwiic_MP3_Trigger_Arduino_Library.h" // http://librarymanager/All#SparkFun_MP3_Trigger
+  MP3TRIGGER mp3;
+  byte mp3Address = 0x37; // default address for Qwiic MP3
+  byte adjustableNumber = 1;
+  int randomsound = random(1,55);
+  int8_t sound;
+#endif
+
 #include <EasyTransfer.h>
 #include <PID_v1.h>
 
@@ -75,12 +116,9 @@ struct RECEIVE_DATA_STRUCTURE {
   bool driveEnabled;
   int8_t domeSpin;
   bool moveL3; // xbox L3 equivilent
-//  int8_t flywheel;
   bool moveR3; // xboxR3 equivilent
   int8_t leftStickX;
   int8_t leftStickY;
-//  int8_t rightStickX;
-//  int8_t rightStickY;
   int8_t soundcmd;
   int8_t psiFlash;
   float pitch;
@@ -138,7 +176,30 @@ double Kp_domeSpinServoPid=4, Ki_domeSpinServoPid=0, Kd_domeSpinServoPid=0;
 PID myPID_domeSpinServoPid(&Input_domeSpinServoPid, &Output_domeSpinServoPid, &Setpoint_domeSpinServoPid, Kp_domeSpinServoPid, Ki_domeSpinServoPid, Kd_domeSpinServoPid, DIRECT);
   
 void setup(){
- 
+#ifdef MP3Sparkfun
+  Wire.begin();
+  //Check to see if MP3 is present
+  if(mp3.begin() == false)
+  {
+    Serial.println("Qwiic/i2c MP3 failed to respond. Please check wiring and possibly the I2C address. Freezing...");
+    while(1);
+  }
+
+  if(mp3.hasCard() == false)
+  {
+    Serial.println("SD card missing. Freezing...");
+    while(1);
+  }
+
+  mp3.setVolume(10); //Volume can be 0 (off) to 31 (max)
+
+  Serial.print("Song count: ");
+  Serial.println(mp3.getSongCount());
+
+  Serial.print("Firmware version: ");
+  Serial.println(mp3.getVersion());
+#endif
+
   myservo2.attach(leftServo_pin);
   myservo1.attach(rightServo_pin);
 
@@ -155,14 +216,13 @@ void setup(){
   myPID_domeSpinServoPid.SetOutputLimits(-255, 255);
 
   pinMode(hallEffectSensor_Pin, INPUT_PULLUP);
-//  pinMode(domeMotor_pwm, OUTPUT);  // Speed Of Motor1 on Motor Driver 1 
+  pinMode(domeMotor_pwm, OUTPUT);  // Speed Of Motor1 on Motor Driver 1 
   pinMode(domeMotor_pin_A, OUTPUT);  // Direction
   pinMode(domeMotor_pin_B, OUTPUT);
   setDomeCenter();
 }
   
 void loop() {
-
   SendRecieveData(); 
   encoder();
   Servos();
@@ -175,6 +235,7 @@ void loop() {
 //  domeServoMovement();
   Timechecks(); 
   debugRoutines();
+  mp3play();
 }
 
 void Timechecks() {

@@ -67,14 +67,7 @@ void receiveRemote() {
       Output_domeSpin_pwm = 0;
       
     }
-    
-//#ifdef MP3SOUNDS
-///*
-//* 
-//* MP3 SOUND CONTROLS for BB8
-//* 
-//*/
-//
+  
 ////  Example Buttons from Move Controller
 ////  buttonsL.down = domeController.state.button.down;
 ////  buttonsL.left = domeController.state.button.left;
@@ -88,16 +81,13 @@ void receiveRemote() {
 ////  buttonsR.right = driveController.state.button.right;
 //
 //if (mp3.isConnected()) {  // check if the MP3 Trigger is connected via i2c
-//  if (CHECK_BUTTON_PRESSEDL(up)) {
-//    if (mp3.isPlaying() == true) mp3.stop();  // if track is playing stop it and play next else play a track
-//    if (CHECK_BUTTON_PRESSEDL(l1)) {
-//      sound = 1;  // Play surprised!
-//    } else if (CHECK_BUTTON_PRESSEDR(l1)){
-//      sound = 40;  // Play surprised!
-//    } else {
-//    sound = randomsound;  // Play surprised!
-//    }
-//  } else if (CHECK_BUTTON_PRESSEDL(right)) { // check for key press (once)
+  if (CHECK_BUTTON_PRESSEDL(up)) {
+    sendTo32u4Data.soundcmd = 1;  // Play surprised!
+  } else if (CHECK_BUTTON_PRESSEDL(right)) { // check for key press (once)
+    sendTo32u4Data.soundcmd = 2;  // Play surprised!
+  } else if (CHECK_BUTTON_PRESSEDL(down)) { // check for key press (once)
+    sendTo32u4Data.soundcmd = 3;  // Play surprised!
+  }
 //    if (mp3.isPlaying() == true) mp3.stop();
 //    sound = 2;  // Play surprised!
 //  } else if (CHECK_BUTTON_PRESSEDL(down)) { 
