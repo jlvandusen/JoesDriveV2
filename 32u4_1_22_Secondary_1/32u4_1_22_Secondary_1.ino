@@ -8,9 +8,10 @@
  * Feather 32u4 Board Libraries: https://learn.adafruit.com/adafruit-feather-32u4-basic-proto/using-with-arduino-ide
  * Encoder for the ENC on Dome Spin: https://github.com/PaulStoffregen/Encoder
  * Adafruit VS1053 Featherwing MusicPlayer: https://github.com/adafruit/Adafruit_VS1053_Library
+ * Servo library - https://github.com/netlabtoolkit/VarSpeedServo
+ * Sparkfun MP3 qwiic/i2c Trigger -  https://github.com/sparkfun/SparkFun_Qwiic_MP3_Trigger_Arduino_Library 
  * Utilizes ESP32NOW technology over WiFi to talk between Dome and Body - need to capture the Wifi MAC during bootup.
  * replace this with the mac of dome uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
- * Servo library - https://github.com/netlabtoolkit/VarSpeedServo
  * 
 */
 

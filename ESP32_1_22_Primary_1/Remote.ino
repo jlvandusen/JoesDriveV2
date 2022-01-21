@@ -80,6 +80,8 @@ void receiveRemote() {
 ////  buttonsR.left = driveController.state.button.left;
 ////  buttonsR.right = driveController.state.button.right;
 
+// MP3 Trigger Commands being sent to the 32u4 0-9 currently, 
+// you can add as many as you wish and even based on multiple button commands
   if (buttonsR.up) {
     sendTo32u4Data.soundcmd = 1;  // Play surprised!
   } else if (buttonsR.right) { // check for key press
@@ -99,75 +101,8 @@ void receiveRemote() {
   } else if (buttonsR.circle) { // check for key press
     sendTo32u4Data.soundcmd = 9;  // Play surprised!
   } else sendTo32u4Data.soundcmd = 0;
-  
-//    if (mp3.isPlaying() == true) mp3.stop();
-//    sound = 2;  // Play surprised!
-//  } else if (CHECK_BUTTON_PRESSEDL(down)) { 
-//    if (mp3.isPlaying() == true) mp3.stop();
-//    sound = 5;  // Play angry!
-//  } else if (CHECK_BUTTON_PRESSEDL(left)) { 
-//    if (mp3.isPlaying() == true) mp3.stop();;
-//    sound = 9;  // Play happy
-//  } else if (CHECK_BUTTON_PRESSEDL(up)) { 
-//    if (mp3.isPlaying() == true) mp3.stop();
-//    sound = 10;  // Play happy{
-//  } else if (CHECK_BUTTON_PRESSEDL(right)) { 
-//    if (mp3.isPlaying() == true) mp3.stop();
-//    sound = 2;  // Play surprised!
-//  } else if (CHECK_BUTTON_PRESSEDL(down)) { 
-//    if (mp3.isPlaying() == true) mp3.stop();
-//    sound = 5;  // Play angry!
-//  } else if (CHECK_BUTTON_PRESSEDL(left)) { 
-//    if (mp3.isPlaying() == true) mp3.stop();
-//    sound = 9;  // Play happy
-//  }
-////  if (mp3.isPlaying() == true) mp3.stop(); // if track is playing stop it and play next else play a track
-//  mp3.playTrack(sound);
-//  
-//}
-//
-//#endif
-//  if(CHECK_BUTTON_PRESSEDL(up)){
-//    
-//  }
-//    if (CHECK_BUTTON_PRESSEDR(up)) { // check for key press (once)
-//      if (mp3IsPlaying() == true) {
-//        mp3Stop();
-//        
-//      } else {
-//        sound = randomsound;
-//      }
-//    }
 
-//    buttonsL.down = domeController.state.button.down;
-//    buttonsL.left = domeController.state.button.left;
-//    buttonsL.right = domeController.state.button.right;
-//    buttonsL.ps = domeController.state.button.ps;
-//    buttonsR.circle = driveController.state.button.circle;
-//    buttonsR.cross = driveController.state.button.cross;
-//    buttonsR.up = driveController.state.button.up;
-//    buttonsR.down = driveController.state.button.down;
-//    buttonsR.left = driveController.state.button.left;
-//    buttonsR.right = driveController.state.button.right;
-
-//  if(CHECK_BUTTON_PRESSEDR(l1)){
-
-//    if(buttonsR.l1){
-//        sendTo32u4Data.flywheel = 0;
-//        if(buttonsL.leftStickX > joystickDeadZoneRange){
-////          sendTo32u4Data.domeSpin = map(buttonsL.leftStickX,5,100,0,-100);
-//          sendTo32u4Data.domeSpin = buttonsL.leftStickX;
-//        }else if(buttonsL.leftStickX < -(joystickDeadZoneRange)){
-////          sendTo32u4Data.domeSpin = map(buttonsL.leftStickX,5,100,0,100);
-//          sendTo32u4Data.domeSpin = buttonsL.leftStickX;
-//        }else{
-//          sendTo32u4Data.domeSpin = 0; 
-//        }
-//        DEBUG_PRINT("Domespin Enabled: ");
-//        DEBUG_PRINTLN(sendTo32u4Data.domeSpin);
-//      }
-
-//    if(CHECK_BUTTON_PRESSEDR(l3)){
+ // Enable or disable Drives (including Dome Controls) leave sounds working
     if(CHECK_BUTTON_PRESSEDR(ps)){
       if (enableDrive == false) {
         enableDrive = true;
@@ -180,7 +115,8 @@ void receiveRemote() {
       }
       sendTo32u4Data.driveEnabled = enableDrive;
     }
-    
+
+ // Enable or disable Dome motor servo mode
     if(CHECK_BUTTON_PRESSEDR(l3)){
       if (DomeServoMode == false) {
         DomeServoMode = true;
@@ -193,7 +129,8 @@ void receiveRemote() {
       }
       sendTo32u4Data.moveR3 = DomeServoMode;
     }
-    
+
+ // Reverse all motor controls (reverse direction on a dime with the dome)
     if(CHECK_BUTTON_PRESSEDL(l3)){
       if (reverseDrive == false) {
         reverseDrive = true;
@@ -208,39 +145,27 @@ void receiveRemote() {
       }
       sendTo32u4Data.moveL3 = reverseDrive; 
     }
+
+// Send all Left Stick commands to the 32u4 if its the left dome controller
     if((buttonsL.leftStickX < -(joystickDeadZoneRange)) || (buttonsL.leftStickX > (joystickDeadZoneRange))){
       sendTo32u4Data.leftStickX = buttonsL.leftStickX;
-      #ifdef debugRemote
-      DEBUG_PRINT("Dome LeftStickX: ");
-      DEBUG_PRINTLN(sendTo32u4Data.leftStickX);
-      #endif
     }else{
       sendTo32u4Data.leftStickX = 0; 
     }
     if((buttonsL.leftStickY < -(joystickDeadZoneRange)) || (buttonsL.leftStickY > (joystickDeadZoneRange))){
       sendTo32u4Data.leftStickY = buttonsL.leftStickY;
-      #ifdef debugRemote
-        DEBUG_PRINT("Dome LeftStickY: ");
-        DEBUG_PRINTLN(sendTo32u4Data.leftStickY);
-      #endif
     }else{
       sendTo32u4Data.leftStickY = 0; 
-    }  
+    }
+
+// Check all Right stick commands against the deadzonerange and allow values outside of 0
     if((buttonsR.rightStickX < -(joystickDeadZoneRange)) || (buttonsR.rightStickX > (joystickDeadZoneRange))){
       buttonsR.rightStickX = buttonsR.rightStickX;
-      #ifdef debugRemote
-        DEBUG_PRINT("Drive RightStickX: ");
-        DEBUG_PRINTLN(buttonsR.rightStickX);
-      #endif
     }else{
       buttonsR.rightStickX = 0; 
     }
     if((buttonsR.rightStickY < -(joystickDeadZoneRange)) || (buttonsR.rightStickY > (joystickDeadZoneRange))){
       buttonsR.rightStickY = buttonsR.rightStickY;
-      #ifdef debugRemote
-      DEBUG_PRINT("Drive RightStickY: ");
-      DEBUG_PRINTLN(buttonsR.rightStickY);
-      #endif
     }else{
       buttonsR.rightStickY = 0; 
     }  
