@@ -176,7 +176,11 @@ double Kp_domeSpinServoPid=4, Ki_domeSpinServoPid=0, Kd_domeSpinServoPid=0;
 PID myPID_domeSpinServoPid(&Input_domeSpinServoPid, &Output_domeSpinServoPid, &Setpoint_domeSpinServoPid, Kp_domeSpinServoPid, Ki_domeSpinServoPid, Kd_domeSpinServoPid, DIRECT);
   
 void setup(){
+  Serial.begin(115200);
+  Serial1.begin(74880); // 74880 78440 57600
+  
 #ifdef MP3Sparkfun
+  delay(5000);
   Wire.begin();
   //Check to see if MP3 is present
   if(mp3.begin() == false)
@@ -206,9 +210,7 @@ void setup(){
   myservo2.write(70 + leftServoOffset, 10);     
   myservo1.write(110 + rightServoOffset, 10);
 
-  Serial.begin(115200);
-  Serial1.begin(57600); // 74880 78440 57600
-  
+
   recESP32.begin(details(receiveFromESP32Data), &Serial1); 
   sendESP32.begin(details(sendToM0Data), &Serial1); 
 

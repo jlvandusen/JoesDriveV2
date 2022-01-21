@@ -2,20 +2,34 @@
 void mp3play (){
   if (mp3.isConnected()) {  // check if the MP3 Trigger is connected via i2c
     soundcmd = receiveFromESP32Data.soundcmd;
-    switch (soundcmd){
-      case 1:
-        if (mp3.isPlaying() == true) mp3.stop();
-        mp3.playTrack(soundcmd);
-      break;
-      case 2:
-        if (mp3.isPlaying() == true) mp3.stop();
-        mp3.playTrack(soundcmd);
-      break;
-      default:
-//        if (mp3.isPlaying() == true) mp3.stop();
-//        mp3.playTrack(randomsound);
-      break;
+    if (soundcmd != 0) {
+      if (soundcmd == 9) soundcmd = randomsound;
+      if (mp3.isPlaying() == true) mp3.stop();
+      mp3.playTrack(soundcmd);
+      soundcmd = 0;
     }
+//    switch (soundcmd){
+//      case 1:
+//        if (mp3.isPlaying() == true) mp3.stop();
+//        mp3.playTrack(soundcmd);
+//        soundcmd = 0;
+//      break;
+//      case 2:
+//        if (mp3.isPlaying() == true) mp3.stop();
+//        mp3.playTrack(soundcmd);
+//        soundcmd = 0;
+//      break;
+//      case 3:
+//        if (mp3.isPlaying() == true) mp3.stop();
+//        mp3.playTrack(soundcmd);
+//        soundcmd = 0;
+//      break;
+//      default:
+////        if (mp3.isPlaying() == true) mp3.stop();
+////        mp3.playTrack(randomsound);
+//      soundcmd = 0;
+//      break;
+//    }
 //    if (CHECK_BUTTON_PRESSEDL(up)) {
 //      if (mp3.isPlaying() == true) mp3.stop();  // if track is playing stop it and play next else play a track
 //      if (CHECK_BUTTON_PRESSEDL(l1)) {

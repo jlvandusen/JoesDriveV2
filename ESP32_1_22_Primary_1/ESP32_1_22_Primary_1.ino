@@ -38,7 +38,6 @@
 //#define debugSounds
 #define debugEasyTransfer
 
-#define MP3SOUNDS // Enable qwiic/i2c communications to MP3 trigger
 #define MOVECONTROLLER
 //#define XBOXCONTROLLER   
 
@@ -110,13 +109,13 @@ SDA - General purpose IO pin #23
 
 #include <Arduino.h>
 #include <EasyTransfer.h> // http://www.billporter.info/easytransfer-arduino-library/
-#include <Wire.h>
+//#include <Wire.h>
 #include <PID_v1.h>  // https://github.com/br3ttb/Arduino-PID-Library/
 #include "wiring_private.h" // pinPeripheral() function
 #include <analogWrite.h>  // https://www.arduinolibraries.info/libraries/esp32-analog-write
   
-#define BUFFER_LENGTH 128 // 64
-#define TWI_BUFFER_LENGTH 128 //64
+//#define BUFFER_LENGTH 128 // 64
+//#define TWI_BUFFER_LENGTH 128 //64
 #define driveDelay .75
 
 #ifdef MOVECONTROLLER
@@ -217,7 +216,7 @@ int8_t joystickDeadZoneRange = 25;  // For controllers that centering problems, 
  * Create Serial 2 to send to the 32u4 / ESP32-S2 (qwiic)
 */
 
-#define SERIAL2_BAUD_RATE 57600  // 74880 57600 78440
+#define SERIAL2_BAUD_RATE 74880  // 74880 57600 78440
 #define SERIAL2_RX_PIN 13
 #define SERIAL2_TX_PIN 12
 
@@ -288,10 +287,6 @@ void setup() {
     Serial.print("Please write down the following MAC and Assign to your Nav Controller(s): ");
     Serial.println(address);
     Serial.println("Bluetooth Ready.");
-  #endif
-
-  #ifdef MP3SOUNDS
-
   #endif
 
   recIMU.begin(details(receiveIMUData), &Serial1); 

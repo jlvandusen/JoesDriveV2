@@ -79,15 +79,27 @@ void receiveRemote() {
 ////  buttonsR.down = driveController.state.button.down;
 ////  buttonsR.left = driveController.state.button.left;
 ////  buttonsR.right = driveController.state.button.right;
-//
-//if (mp3.isConnected()) {  // check if the MP3 Trigger is connected via i2c
-  if (CHECK_BUTTON_PRESSEDL(up)) {
+
+  if (buttonsR.up) {
     sendTo32u4Data.soundcmd = 1;  // Play surprised!
-  } else if (CHECK_BUTTON_PRESSEDL(right)) { // check for key press (once)
-    sendTo32u4Data.soundcmd = 2;  // Play surprised!
-  } else if (CHECK_BUTTON_PRESSEDL(down)) { // check for key press (once)
-    sendTo32u4Data.soundcmd = 3;  // Play surprised!
-  }
+  } else if (buttonsR.right) { // check for key press
+    sendTo32u4Data.soundcmd = 2;  // Play quick answer!
+  } else if (buttonsR.down) { // check for key press
+    sendTo32u4Data.soundcmd = 3;  // Play chatter!
+  } else if (buttonsR.left) { // check for key press
+    sendTo32u4Data.soundcmd = 4;  // Play surprised!
+  } else if (buttonsL.up) { // check for key press
+    sendTo32u4Data.soundcmd = 5;  // Play surprised!
+  } else if (buttonsL.right) { // check for key press
+    sendTo32u4Data.soundcmd = 6;  // Play surprised!
+  } else if (buttonsL.down) { // check for key press
+    sendTo32u4Data.soundcmd = 7;  // Play surprised!
+  } else if (buttonsL.left) { // check for key press
+    sendTo32u4Data.soundcmd = 8;  // Play surprised!
+  } else if (buttonsR.circle) { // check for key press
+    sendTo32u4Data.soundcmd = 9;  // Play surprised!
+  } else sendTo32u4Data.soundcmd = 0;
+  
 //    if (mp3.isPlaying() == true) mp3.stop();
 //    sound = 2;  // Play surprised!
 //  } else if (CHECK_BUTTON_PRESSEDL(down)) { 
