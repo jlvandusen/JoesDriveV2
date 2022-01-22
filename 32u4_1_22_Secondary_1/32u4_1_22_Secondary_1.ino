@@ -3,6 +3,9 @@
  * Secondary 32u4 Dome Controls and PSI Body lights v7.1 PCB Board
  * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
  * Utilizes Feather 32u4 Basic Proto From Adafruit: https://www.adafruit.com/product/2771
+ * https://learn.adafruit.com/adafruit-feather-32u4-basic-proto/pinouts
+ * Or Feather 32u4 Feather M0 Basic Proto
+ * https://learn.adafruit.com/adafruit-feather-m0-basic-proto/pinouts
  * 
  * Libraries Required
  * Feather 32u4 Board Libraries: https://learn.adafruit.com/adafruit-feather-32u4-basic-proto/using-with-arduino-ide
@@ -45,7 +48,7 @@
 */
 #define MP3Sparkfun // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
 //#define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
-//#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Feather VS105
+//#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
 
 /* Debug Printlines */
 #define DEBUG_PRINTLN(s) Serial.println(s)
@@ -55,11 +58,11 @@
 /*
  * PIN DEFINITIONS
 */
-#define motorEncoder_pin_A 14 //3 18 - 32u4 RF, 14 - 32u4 Proto M0 Feather M0
-#define motorEncoder_pin_B 15 //2 19 - 32u4 RF, 15 - 32u4 Proto M0 Feather M0
-#define domeMotor_pwm 10  // 10 - M0 Proto | 21 - 32u4
-#define domeMotor_pin_A 9 //  9 - M0 Proto | 22 - 32u4
-#define domeMotor_pin_B 6 //  6 - M0 Proto | 23 - 32u4
+#define motorEncoder_pin_A 18 //18 - 32u4 Basic Proto/32u4 RF, 14 - 32u4 Proto M0 Feather M0
+#define motorEncoder_pin_B 19 //19 - 32u4 Basic Proto/32u4 RF, 15 - 32u4 Proto M0 Feather M0
+#define domeMotor_pwm 10    // 10 - 32u4 Basic Proto/M0 Proto/32u4 RF
+#define domeMotor_pin_A 9   //  9 - 32u4 Basic Proto/M0 Proto/32u4 RF
+#define domeMotor_pin_B 6   //  6 - 32u4 Basic Proto/M0 Proto/32u4 RF
 #define hallEffectSensor_Pin 20 //19
 #define leftServo_pin 12
 #define rightServo_pin 11
@@ -165,6 +168,7 @@ VarSpeedServo myservo2; // create servo object to control a right servo
  *
  * This example code is in the public domain.
  */
+#define ENCODER_OPTIMIZE_INTERRUPTS
 #include <Encoder.h>
 Encoder myEnc(motorEncoder_pin_A, motorEncoder_pin_B);
 long oldPosition  = -999;

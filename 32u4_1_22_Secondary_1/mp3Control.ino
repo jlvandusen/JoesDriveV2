@@ -7,63 +7,7 @@ void mp3play (){
       if (mp3.isPlaying() == true) mp3.stop();
       mp3.playTrack(soundcmd);
       soundcmd = 0;
-    }
-//    switch (soundcmd){
-//      case 1:
-//        if (mp3.isPlaying() == true) mp3.stop();
-//        mp3.playTrack(soundcmd);
-//        soundcmd = 0;
-//      break;
-//      case 2:
-//        if (mp3.isPlaying() == true) mp3.stop();
-//        mp3.playTrack(soundcmd);
-//        soundcmd = 0;
-//      break;
-//      case 3:
-//        if (mp3.isPlaying() == true) mp3.stop();
-//        mp3.playTrack(soundcmd);
-//        soundcmd = 0;
-//      break;
-//      default:
-////        if (mp3.isPlaying() == true) mp3.stop();
-////        mp3.playTrack(randomsound);
-//      soundcmd = 0;
-//      break;
-//    }
-//    if (CHECK_BUTTON_PRESSEDL(up)) {
-//      if (mp3.isPlaying() == true) mp3.stop();  // if track is playing stop it and play next else play a track
-//      if (CHECK_BUTTON_PRESSEDL(l1)) {
-//        sound = 1;  // Play surprised!
-//      } else if (CHECK_BUTTON_PRESSEDR(l1)){
-//        sound = 40;  // Play surprised!
-//      } else {
-//      sound = randomsound;  // Play surprised!
-//      }
-//    } else if (CHECK_BUTTON_PRESSEDL(right)) { // check for key press (once)
-//      if (mp3.isPlaying() == true) mp3.stop();
-//      sound = 2;  // Play surprised!
-//    } else if (CHECK_BUTTON_PRESSEDL(down)) { 
-//      if (mp3.isPlaying() == true) mp3.stop();
-//      sound = 5;  // Play angry!
-//    } else if (CHECK_BUTTON_PRESSEDL(left)) { 
-//      if (mp3.isPlaying() == true) mp3.stop();;
-//      sound = 9;  // Play happy
-//    } else if (CHECK_BUTTON_PRESSEDL(up)) { 
-//      if (mp3.isPlaying() == true) mp3.stop();
-//      sound = 10;  // Play happy{
-//    } else if (CHECK_BUTTON_PRESSEDL(right)) { 
-//      if (mp3.isPlaying() == true) mp3.stop();
-//      sound = 2;  // Play surprised!
-//    } else if (CHECK_BUTTON_PRESSEDL(down)) { 
-//      if (mp3.isPlaying() == true) mp3.stop();
-//      sound = 5;  // Play angry!
-//    } else if (CHECK_BUTTON_PRESSEDL(left)) { 
-//      if (mp3.isPlaying() == true) mp3.stop();
-//      sound = 9;  // Play happy
-//    }
-//  //  if (mp3.isPlaying() == true) mp3.stop(); // if track is playing stop it and play next else play a track
-//    mp3.playTrack(sound);
-    
+    } 
   }
 }
 #endif
