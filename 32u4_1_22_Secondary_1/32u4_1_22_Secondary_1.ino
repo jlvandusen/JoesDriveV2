@@ -46,9 +46,11 @@
 /*  MP3 Trigger types supported
  *  Still to do: VS105 and Zio
 */
+//#define NoMP3 // Dont want to use MP3 services on this board
 #define MP3Sparkfun // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
 //#define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
 //#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
+
 
 /* Debug Printlines */
 #define DEBUG_PRINTLN(s) Serial.println(s)
@@ -77,30 +79,7 @@
 #define leftServoOffset -7
 #define rightServoOffset 0
 
-#ifdef MP3Zio
-#include <Wire.h>
-//These are the commands we can send
-#define COMMAND_STOP 0x00
-#define COMMAND_PLAY_TRACK 0x01 //Play a given track number like on a CD: regardless of file names plays 2nd file in dir.
-#define COMMAND_PLAY_FILENUMBER 0x02 //Play a file # from the root directory: 3 will play F003xxx.mp3
-#define COMMAND_PAUSE 0x03 //Will pause if playing, or starting playing if paused
-#define COMMAND_PLAY_NEXT 0x04
-#define COMMAND_PLAY_PREVIOUS 0x05
-#define COMMAND_SET_EQ 0x06
-#define COMMAND_SET_VOLUME 0x07
-#define COMMAND_GET_SONG_COUNT 0x08 //Note: This causes song to stop playing
-#define COMMAND_GET_SONG_NAME 0x09 //Fill global array with 8 characters of the song name
-#define COMMAND_GET_PLAY_STATUS 0x0A
-#define COMMAND_GET_CARD_STATUS 0x0B
-#define COMMAND_GET_VERSION 0x0C
-#define COMMAND_SET_ADDRESS 0xC7
-  byte mp3Address = 0x37; // default address for Qwiic MP3
-  byte adjustableNumber = 1;
-  int randomsound = random(1,55);
-  int8_t sound;
-#endif
-
-#ifdef MP3Sparkfun
+#ifndef  MP3VS105
   #include <Wire.h>
   #include "SparkFun_Qwiic_MP3_Trigger_Arduino_Library.h" // http://librarymanager/All#SparkFun_MP3_Trigger
   MP3TRIGGER mp3;
@@ -108,6 +87,28 @@
   byte adjustableNumber = 1;
   int randomsound = random(1,55);
   int8_t sound;
+
+#else
+
+
+
+// include SPI, MP3 and SD libraries
+  #include <SPI.h>
+  #include <SD.h>
+  #include <Adafruit_VS1053.h>
+// These are the pins used
+  #define VS1053_RESET   -1     // VS1053 reset pin (not used!)  
+  #define VS1053_CS       6     // VS1053 chip select pin (output)
+  #define VS1053_DCS     10     // VS1053 Data/command select pin (output)
+  #define CARDCS          5     // Card chip select pin
+  // DREQ should be an Int pin *if possible* (not possible on 32u4)
+  #define VS1053_DREQ     9     // VS1053 Data request, ideally an Interrupt pin
+
+Adafruit_VS1053_FilePlayer musicPlayer = 
+  Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
+  int randomsound = random(1,55);
+  int8_t sound;
+  String FileName;
 #endif
 
 #include <EasyTransfer.h>
@@ -183,8 +184,8 @@ PID myPID_domeSpinServoPid(&Input_domeSpinServoPid, &Output_domeSpinServoPid, &S
 void setup(){
   Serial.begin(115200);
   Serial1.begin(74880); // 74880 78440 57600
-  
-#ifdef MP3Sparkfun
+
+#ifndef  MP3VS105
   delay(5000);
   Wire.begin();
   //Check to see if MP3 is present
@@ -200,13 +201,45 @@ void setup(){
     while(1);
   }
 
-  mp3.setVolume(10); //Volume can be 0 (off) to 31 (max)
+  mp3.setVolume(25); //Volume can be 0 (off) to 31 (max)
 
   Serial.print("Song count: ");
   Serial.println(mp3.getSongCount());
 
   Serial.print("Firmware version: ");
   Serial.println(mp3.getVersion());
+  
+#else
+
+  if (! musicPlayer.begin()) { // initialise the music player
+     Serial.println(F("Couldn't find VS1053, do you have the right pins defined?"));
+     while (1);
+  }
+
+  Serial.println(F("VS1053 found"));
+ 
+  musicPlayer.sineTest(0x44, 500);    // Make a tone to indicate VS1053 is working
+  
+  if (!SD.begin(CARDCS)) {
+    Serial.println(F("SD failed, or not present"));
+    while (1);  // don't do anything more
+  }
+  Serial.println("SD OK!");
+  
+  // list files
+  printDirectory(SD.open("/"), 0);
+  
+  // Set volume for left, right channels. lower numbers == louder volume!
+  musicPlayer.setVolume(10,10);
+  
+// Timer interrupts are not suggested, better to use DREQ interrupt!
+// but we don't have them on the 32u4 feather...
+ musicPlayer.useInterrupt(VS1053_FILEPLAYER_TIMER0_INT); // timer int
+
+// If DREQ is on an interrupt pin we can do background
+// audio playing
+//  musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT);  // DREQ int
+
 #endif
 
   myservo2.attach(leftServo_pin);
