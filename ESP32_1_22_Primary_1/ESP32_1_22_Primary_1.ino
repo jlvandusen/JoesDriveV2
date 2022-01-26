@@ -28,6 +28,9 @@
 #define DEBUG_PRINT(s) Serial.print(s)
 #define SerialDebug Serial
 
+//#define ESPNOWCONFIG
+#define debugESPNOW
+//#define debugESPNOWSend
 //#define debug32u4
 //#define debugRemote
 //#define debugIMU
@@ -36,7 +39,7 @@
 //#define debugFlywheel
 //#define debugS2S
 //#define debugSounds
-#define debugEasyTransfer
+//#define debugEasyTransfer
 
 #define MOVECONTROLLER
 //#define XBOXCONTROLLER   
@@ -51,7 +54,8 @@
 // https://www.adafruit.com/product/3619
 
 #define MasterNav "7c:9e:bd:d7:63:c6" 
-   
+
+
 /*
   PIN DEFINITIONS
 */
@@ -113,10 +117,22 @@ SDA - General purpose IO pin #23
 #include <PID_v1.h>  // https://github.com/br3ttb/Arduino-PID-Library/
 #include "wiring_private.h" // pinPeripheral() function
 #include <analogWrite.h>  // https://www.arduinolibraries.info/libraries/esp32-analog-write
-  
+
+#include <stdint.h>
+#include <esp_now.h>
+#include "WiFi.h"
+
 //#define BUFFER_LENGTH 128 // 64
 //#define TWI_BUFFER_LENGTH 128 //64
 #define driveDelay .75
+
+/*
+ * *********** IMPORTANT SETTINGS - YOU MUST CHANGE/CONFIGURE TO FIT YOUR HARDWARE MAC ADDRESS ************
+ * Complete Instructions to Get and Change ESP MAC Address: https://RandomNerdTutorials.com/get-change-esp32-esp8266-mac-address-arduino/
+ * As per the following walkthrough https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
+ * broadcastAddress REPLACE WITH THE MAC Address of your receiver - the other ESP32 in the body of BB8 7C:9E:BD:D7:63:C4
+*/
+uint8_t broadcastAddress[] = {0x7C, 0x9E, 0xBD, 0xD7, 0x63, 0xC4}; // Body ESP32
 
 #ifdef MOVECONTROLLER
 PSController driveController(DRIVE_CONTROLLER_MAC); //define the driveController variable to be used against the Nav1 and Nav2 controllers.
@@ -213,6 +229,34 @@ int8_t joystickDeadZoneRange = 25;  // For controllers that centering problems, 
 #endif
 
 /*
+ * Define variables to store readings to be sent
+*/
+int sendPSI = 1;
+byte sendHP = 0;
+float sendBAT = 0;    
+int sendDIS = 0;
+
+/*
+ * Variable to store if sending data was successful
+*/
+
+String success;
+
+// Structure to send data
+// Must match the receiver structure
+typedef struct struct_message {
+    int psi;
+    byte btn;
+    float bat;
+    int dis;
+} struct_message;
+
+// Create a struct_message called outgoingESPNOW to hold sensor readings
+struct_message outgoingESPNOW;
+
+// Create a struct_message to hold incoming sensor readings
+struct_message incomingESPNOW;
+/*
  * Create Serial 2 to send to the 32u4 / ESP32-S2 (qwiic)
 */
 
@@ -232,6 +276,13 @@ SoftwareSerial Serial3;
 
 unsigned long currentMillis, IMUmillis, lastLoopMillis, lastDomeMillis, rec32u4Millis, lastPrintMillis; 
 bool IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected, DomeServoMode, enableDrive, reverseDrive, enabledDrive;
+
+/* 
+ *  Define variables to store incoming readings
+*/
+int incomingPSI = 0;
+byte incomingBTN = 0;
+float incomingBAT = 0;      
 
 
 //int pot_S2S;   // target position/inout
@@ -293,6 +344,13 @@ void setup() {
   rec32u4.begin(details(receiveFrom32u4Data), &Serial2);
   send32u4.begin(details(sendTo32u4Data), &Serial2);
 
+#ifdef ESPNOWCONFIG
+  WiFi.mode(WIFI_MODE_STA);
+  Serial.print("Please write down the following WIFI MAC: ");
+  Serial.println(WiFi.macAddress());
+  Serial.println("WIFI ESPNOW Ready.");
+#endif
+
   PID1_S2S.SetMode(AUTOMATIC);              // PID Setup - S2S SERVO
   PID1_S2S.SetOutputLimits(-255, 255);
   PID1_S2S.SetSampleTime(20);
@@ -340,7 +398,31 @@ void setup() {
   pinMode(flyWheelMotor_pwm, OUTPUT);  // Speed of Motor2 on Motor Driver 2 
   pinMode(flyWheelMotor_pin_A, OUTPUT);  // Direction
   pinMode(flyWheelMotor_pin_B, OUTPUT);
-  
+
+ 
+  WiFi.mode(WIFI_STA); // Set device as a Wi-Fi Station
+
+  if (esp_now_init() != ESP_OK) { // Init ESP-NOW
+    Serial.println("Error initializing ESP-NOW");
+    return;
+  }
+
+  // Once ESPNow is successfully Init, we will register for Send CB to
+  // get the status of Trasnmitted packet
+  esp_now_register_send_cb(OnDataSent);
+
+  esp_now_peer_info_t peerInfo;   // Register peer ESPNOW chip
+  memcpy(peerInfo.peer_addr, broadcastAddress, 6);
+  peerInfo.channel = 0;  
+  peerInfo.encrypt = false;
+
+
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {   // Add peer        
+    Serial.println("Failed to add peer");
+    return;
+  }
+  // Register for a callback function that will be called when data is received
+  esp_now_register_recv_cb(OnDataRecv);
 }
 
 
@@ -353,6 +435,7 @@ void loop() {
     S2S_Movement(); 
     drive_Movement(); 
     sendDataTo32u4();
+    sendESPNOW();
     spinFlywheel();
     if(currentMillis - lastPrintMillis >= 70) {
       lastPrintMillis = currentMillis;
@@ -394,7 +477,48 @@ void sendDataTo32u4(){
    }       
 }
 
+void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
+  memcpy(&incomingESPNOW, incomingData, sizeof(incomingESPNOW));
+  #ifdef debugESPNOWSend
+  Serial.print("Bytes received: ");
+  Serial.println(len);
+  #endif
+  incomingPSI = incomingESPNOW.psi;
+  incomingBTN = incomingESPNOW.btn;
+  incomingBAT = incomingESPNOW.bat;
+}
 
+/* 
+ *  ESPNOW Callback when data is sent
+*/
+void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  #ifdef debugESPNOWSend
+  Serial.print("\r\nLast Packet Send Status:\t");
+  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+  if (status ==0){
+    success = "Delivery Success :)";
+  }
+  else{
+    success = "Delivery Fail :(";
+  }
+  #endif
+}
+
+void sendESPNOW() {
+  outgoingESPNOW.psi = sendPSI;
+  outgoingESPNOW.btn = sendHP;
+  outgoingESPNOW.bat = sendBAT;
+  outgoingESPNOW.dis = sendDIS;
+  // Send message via ESP-NOW
+  esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &outgoingESPNOW, sizeof(outgoingESPNOW));
+  #ifdef debugESPNOWSend
+  if (result == ESP_OK) {
+    Serial.println("Sent with success");
+  } else {
+    Serial.println("Error sending the data");
+  }
+  #endif
+}
 
 //void psiTime(){
 //  if (receiveFromESP32Data.psiFlash) {

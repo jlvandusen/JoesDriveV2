@@ -12,18 +12,19 @@
 //#define debugDome
 #define debugBody // Validate and feedback what is being received from Body (PSI, BTN and Bat)
 //#define debugRecieveESPNOW // Raw values over the ESPNOW channel
+//#define debugSendESPNOW
 //#define ESPNOWCONFIG  // Configure the system to display its wifi mac and bluetooth addresses for insert into Body code.
-
+//#define DebugESPNOW
 /*
  * PIN DEFINITIONS
 */
 
-#define battPin     26 //A0    
+#define battPin     A13 //A0    
 #define psiPIN      25 //A1
-#define sLogicPIN   12
-#define lLogicPIN   27 
-#define hpPIN       33
-#define eyePIN      15
+#define sLogicPIN   27
+#define lLogicPIN   33 
+#define hpPIN       15
+#define eyePIN      32
 
 #define dataDelay   0
 #define recDelay    10
@@ -46,7 +47,8 @@
 uint8_t broadcastAddress[] = {0x7C, 0x9E, 0xBD, 0xD7, 0x63, 0xC4}; // Body ESP32
 
 #define LED_PIN 13 // (Arduino is 13, Teensy is 11, Teensy++ is 6)
-#define analogWrite ledcWrite  // Allows ESP32 to function using its own ledcwrite function when dealing with analog pins
+//#define analogWrite ledcWrite  // Allows ESP32 to function using its own ledcwrite function when dealing with analog pins
+#include <analogWrite.h>  // https://www.arduinolibraries.info/libraries/esp32-analog-write
 
 /* 
  *  Define variables to store incoming readings
@@ -92,15 +94,16 @@ Adafruit_NeoPixel sLOGIC = Adafruit_NeoPixel(3, sLogicPIN, NEO_GRB + NEO_KHZ800)
 Adafruit_NeoPixel lLOGIC = Adafruit_NeoPixel(6, lLogicPIN, NEO_GRB + NEO_KHZ800); 
 Adafruit_NeoPixel HP = Adafruit_NeoPixel(1, hpPIN, NEO_RGB + NEO_KHZ800); 
 Adafruit_NeoPixel EYE = Adafruit_NeoPixel(1, eyePIN, NEO_GRB + NEO_KHZ800); 
+Adafruit_NeoPixel PSI = Adafruit_NeoPixel(1, psiPIN, NEO_GRB + NEO_KHZ800);
 
 unsigned long randomMillis, previousMillis, previousMillis2, lastSendRecMillis;
-unsigned long lastHPCycleMillis, randomMillisSingle, but4StateMillis, lastBattUpdate;
+unsigned long lastHPCycleMillis, randomMillisSingle, BTNstateMillis, lastBattUpdate;
 unsigned long lastBodyReceive, lastFlash;
 int psiVal;
 
 const byte numChars = 32;
-int LEDState = 1;
-int but4State;
+int LEDState = 0;
+int BTNstate;
 int flashtime;
 int holoPulseState = 2;
 int bpulse = 80;
@@ -137,14 +140,13 @@ void setup() {
   // get the status of Trasnmitted packet
   esp_now_register_send_cb(OnDataSent);
 
-  // Register peer
-  esp_now_peer_info_t peerInfo;
+  esp_now_peer_info_t peerInfo;   // Register peer ESPNOW chip
   memcpy(peerInfo.peer_addr, broadcastAddress, 6);
   peerInfo.channel = 0;  
   peerInfo.encrypt = false;
 
-  // Add peer        
-  if (esp_now_add_peer(&peerInfo) != ESP_OK) {
+
+  if (esp_now_add_peer(&peerInfo) != ESP_OK) {   // Add peer        
     Serial.println("Failed to add peer");
     return;
   }
@@ -172,9 +174,13 @@ void sendReadings() {
   outgoingReadings.dis = sendDIS;
   // Send message via ESP-NOW
   esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &outgoingReadings, sizeof(outgoingReadings));
+  #ifdef DebugESPNOW
   if (result == ESP_OK) {
     Serial.println("Sent with success");
-  } else Serial.println("Error sending the data");
+  } else {
+    Serial.println("Error sending the data");
+  }
+  #endif
 }
 
 /*  
@@ -184,6 +190,12 @@ void sendReadings() {
 void ledControls() {
   if(millis() - previousMillis > interval) {
     previousMillis = millis();
+    if (incomingBTN == 1 && BTNstate < 2) {  // check button presses being passed from Body
+      LED_State();
+    } else if (incomingBTN == 0 && BTNstate != 0) {
+      BTNstate = 0;
+    }
+    
     if (LEDState == 1) {
       doubleLogic();
       Holo();
@@ -201,11 +213,7 @@ void ledControls() {
       rearLogicRandom();
     }
   
-    if (incomingBTN == 1 && but4State < 2){
-      LED_State();
-    } else if (incomingBTN == 0 && but4State != 0) {
-      but4State = 0;
-    }
+
   }
 }
 
@@ -217,8 +225,10 @@ void ledControls() {
  
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
+  #ifdef debugRecieveESPNOW
   Serial.print("Bytes received: ");
   Serial.println(len);
+  #endif
   incomingPSI = incomingReadings.psi;
   incomingBTN = incomingReadings.btn;
   incomingBAT = incomingReadings.bat;
@@ -228,14 +238,17 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
  *  ESPNOW Callback when data is sent
 */
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
+  #ifdef debugSendESPNOW
   Serial.print("\r\nLast Packet Send Status:\t");
   Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+  
   if (status ==0){
     success = "Delivery Success :)";
   }
   else{
     success = "Delivery Fail :(";
   }
+  #endif 
 }
 
 
@@ -321,17 +334,17 @@ void doubleLogicFade() {
 }
 
 void LED_State() {
-  if(but4State == 0){
-    but4StateMillis = millis();
-    but4State = 1;
+  if(BTNstate == 0){
+    BTNstateMillis = millis();
+    BTNstate = 1;
   }
-  if(but4State == 1 && (millis() - but4StateMillis > 400)){
+  if(BTNstate == 1 && (millis() - BTNstateMillis > 400)){
     if(LEDState == 3){
       LEDState = 1;
     }else{
       LEDState++;
     }
-  but4State = 2;
+  BTNstate = 2;
   }
 }
 
@@ -489,18 +502,29 @@ void debugRoutines() {
 #ifdef debugBody
   SerialDebug.print(F("Body/PSI: ")); SerialDebug.print(incomingPSI); SerialDebug.print('\t'); 
   SerialDebug.print(F("Body/BTN: ")); SerialDebug.print(incomingBTN); SerialDebug.print('\t');
-  SerialDebug.print(F("Body/BAT: ")); SerialDebug.print(incomingBAT); SerialDebug.println('\t');  
+  SerialDebug.print(F("BTNstate: ")); SerialDebug.print(BTNstate); SerialDebug.print('\t');
+  SerialDebug.print(F("Body/BAT: ")); SerialDebug.print(incomingBAT); SerialDebug.print('\t'); 
+  SerialDebug.print(F("Dome/BAT: ")); SerialDebug.print(sendBAT); SerialDebug.print('\t'); 
+  SerialDebug.print(F("incomingPSI: ")); SerialDebug.print(incomingPSI); SerialDebug.println('\t');  
+#endif
+
+#ifdef debugDome
+  SerialDebug.print(F("Dome/BAT: ")); SerialDebug.print(sendBAT); SerialDebug.print('\t'); 
+  SerialDebug.print(F("BTNstate: ")); SerialDebug.print(BTNstate); SerialDebug.print('\t');
+  SerialDebug.print(F("Body/BAT: ")); SerialDebug.print(incomingBAT); SerialDebug.print('\t');
+  SerialDebug.print(F("PSI: ")); SerialDebug.print(incomingPSI); SerialDebug.print('\t');
+  SerialDebug.print(F("ESPNOW: ")); SerialDebug.print(success); SerialDebug.println('\t');  
 #endif
 
 #ifdef debugRecieveESPNOW
   // Display Readings in Serial Monitor
   Serial.println("INCOMING READINGS");
   Serial.print("PSI: ");
-  Serial.println(incomingReadings.psi);
-  Serial.print("ButtonStatus: ");
-  Serial.println(incomingReadings.btn);
-  Serial.print("Body Battery Level: ");
-  Serial.println(incomingReadings.bat);
+  Serial.print(incomingReadings.psi);
+  Serial.print(" ButtonStatus: ");
+  Serial.print(incomingReadings.btn);
+  Serial.print(" Body Battery Level: ");
+  Serial.print(incomingReadings.bat);
   Serial.println();
 #endif
 }

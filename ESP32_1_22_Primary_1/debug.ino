@@ -26,6 +26,16 @@
     
   #endif
 
+  #ifdef debugESPNOW
+     SerialDebug.print(F("BodyPSI: ")); SerialDebug.print(sendPSI); SerialDebug.print("\t");
+     SerialDebug.print(F("BodyHP: ")); SerialDebug.print(sendHP); SerialDebug.print("\t"); 
+     SerialDebug.print(F("BodyBAT: ")); SerialDebug.print(sendBAT); SerialDebug.print("\t"); 
+     SerialDebug.print(F("BodyDIS: ")); SerialDebug.print(sendDIS); SerialDebug.print("\t");   
+     SerialDebug.print(F("DomePSI: ")); SerialDebug.print(incomingPSI); SerialDebug.print("\t"); 
+     SerialDebug.print(F("DomeBAT: ")); SerialDebug.print(incomingBAT); SerialDebug.println("\t"); 
+     
+  #endif
+
   #ifdef debugEasyTransfer
   
      SerialDebug.print(F("driveEnabled: ")); Serial.print(sendTo32u4Data.driveEnabled); Serial.print("\t"); 
