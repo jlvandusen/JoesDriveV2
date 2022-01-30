@@ -29,8 +29,9 @@
 #define SerialDebug Serial
 
 //#define ESPNOWCONFIG
-#define debugESPNOW
+//#define debugESPNOW
 //#define debugESPNOWSend
+#define debugPreferences
 //#define debug32u4
 //#define debugRemote
 //#define debugIMU
@@ -62,19 +63,19 @@
 
 
 #define NeoPixel_pin 27
-#define S2S_pwm 33 //22  // SCL 22 and SDA 23
-#define S2S_pin_1 26 //A0
-#define S2S_pin_2 25 //A1
+#define S2S_pwm 33 
+#define S2S_pin_1 26 
+#define S2S_pin_2 25 
 #define Drive_pwm 21
-#define Drive_pin_1 4 //A5
+#define Drive_pin_1 4 
 #define Drive_pin_2 27
 #define S2SPot_pin A2 //GPIO 34
 #define flyWheelMotor_pwm 15
 #define flyWheelMotor_pin_A 32
 #define flyWheelMotor_pin_B 14
-#define voltageSensor_Pin A3 //A4 or 13
+#define voltageSensor_Pin A3 //GPIO 39
 
-// Reverse Drives based on pin connections (reverse Polartity)
+// Reverse Drives based on polarity pin connections (reverse Polartity)
 #define revS2S
 //#define revDrive
 #define revGyro
@@ -97,15 +98,15 @@ SDA - General purpose IO pin #23
   LIBRARY DEFINITIONS
 */
 
-//#ifdef XBOXCONTROLLER
-//#include <XBOXRECV.h>
-//#endif
-
-#ifdef MOVECONTROLLER
 /*
  Modified ESP32 BT Host Library https://github.com/reeltwo/PSController
 */
 
+#ifdef XBOXCONTROLLER
+  #include <XBOXRECV.h>
+#endif
+
+#ifdef MOVECONTROLLER
   #include <PSController.h>
   #define DRIVE_CONTROLLER_MAC  nullptr
   #define DOME_CONTROLLER_MAC nullptr
@@ -118,6 +119,9 @@ SDA - General purpose IO pin #23
 #include "wiring_private.h" // pinPeripheral() function
 #include <analogWrite.h>  // https://www.arduinolibraries.info/libraries/esp32-analog-write
 
+/*
+ Needed Libraries for ESPNOW to connect to Dome Controller
+*/
 #include <stdint.h>
 #include <esp_now.h>
 #include "WiFi.h"
@@ -148,9 +152,15 @@ EasyTransfer send32u4;
 EasyTransfer rec32u4; 
 
 /*
+ * Setup EEPROM Saving of preferences for ESP32
+ */
+#include <Preferences.h>
+Preferences preferences;
+#include <nvs_flash.h> // for wiping NVram
+
+/*
  * Create receive IMU from Trinket M0 Objects
 */
-
 struct RECEIVE_DATA_STRUCTURE_IMU{
   float pitch;
   float roll; 
@@ -239,7 +249,6 @@ int sendDIS = 0;
 /*
  * Variable to store if sending data was successful
 */
-
 String success;
 
 // Structure to send data
@@ -256,18 +265,17 @@ struct_message outgoingESPNOW;
 
 // Create a struct_message to hold incoming sensor readings
 struct_message incomingESPNOW;
+
 /*
  * Create Serial 2 to send to the 32u4 / ESP32-S2 (qwiic)
 */
-
-#define SERIAL2_BAUD_RATE 74880  // 74880 57600 78440
+#define SERIAL2_BAUD_RATE 74880  // 74880 57600
 #define SERIAL2_RX_PIN 13
 #define SERIAL2_TX_PIN 12
 
 /*
  * Create Serial 3 to send to debug
 */
-
 #include <SoftwareSerial.h>
 SoftwareSerial Serial3;
 #define SERIAL3_BAUD_RATE 115200
@@ -293,11 +301,11 @@ int target_pos_drive;
 int diff_drive; // difference of position
 double easing_drive;
 
-float IMUDeadzone = 0;  //3
-int S2S_potDeadzone = 3; // 3
+float IMUDeadzone = 0, pitchOffset, rollOffset;
+int S2S_pot, potOffsetS2S;
+int S2S_potDeadzone = 10; // 3
 int current_pos_S2S;  // variables for smoothing S2S
 int target_pos_S2S;
-int S2S_pot;
 int diff_S2S; // difference of position
 double easing_S2S;
 
@@ -325,20 +333,22 @@ PID PID_Drive(&Input3, &Output3, &Setpoint3, Pk3, Ik3 , Dk3, DIRECT);    // Main
 
 void setup() {
   
-  delay(5000); // Wait for Boot
+  delay(5000); // Wait for Boot and for serial to become ready
   currentMillis = millis();
   Serial.begin(115200);
   Serial1.begin(115200); //115200 74880
   Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN);
 //  Serial3.begin(SERIAL3_BAUD_RATE, SWSERIAL_8N1, SERIAL3_RX_PIN, SERIAL3_TX_PIN,false,256);
 
-  #ifdef MOVECONTROLLER
-    PSController::startListening(MasterNav);
-    String address = PSController::getDeviceAddress();
-    Serial.print("Please write down the following MAC and Assign to your Nav Controller(s): ");
-    Serial.println(address);
-    Serial.println("Bluetooth Ready.");
-  #endif
+  preferences.begin("JoeDriveV2", false); // open preferences channel
+  
+#ifdef MOVECONTROLLER
+  PSController::startListening(MasterNav);
+  String address = PSController::getDeviceAddress();
+  Serial.print("Please write down the following MAC and Assign to your Nav Controller(s): ");
+  Serial.println(address);
+  Serial.println("Bluetooth Ready.");
+#endif
 
   recIMU.begin(details(receiveIMUData), &Serial1); 
   rec32u4.begin(details(receiveFrom32u4Data), &Serial2);
@@ -423,6 +433,17 @@ void setup() {
   }
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(OnDataRecv);
+
+// *********  Read offsets from EEPROM  **********
+    
+  pitchOffset = preferences.getFloat("pitchOffset", 0);
+  rollOffset = preferences.getFloat("rollOffset", 0);
+  potOffsetS2S = preferences.getInt("potOffsetS2S", 0);
+
+
+  if (abs(rollOffset) + abs(pitchOffset) + abs(potOffsetS2S) == 0 ){ // If the offsets are empty, soft set them dont store them until asked.
+    setOffsetsONLY();
+  }
 }
 
 
@@ -446,8 +467,8 @@ void loop() {
 
 void receiveIMU(){
   recIMU.receiveData();
-  sendTo32u4Data.roll = receiveIMUData.roll;
-  sendTo32u4Data.pitch = receiveIMUData.pitch;
+  sendTo32u4Data.roll = receiveIMUData.roll + rollOffset;
+  sendTo32u4Data.pitch = receiveIMUData.pitch + pitchOffset;
    #ifdef debugIMU
      DEBUG_PRINT("IMU ROLL: ");
      DEBUG_PRINT(sendTo32u4Data.roll);
@@ -588,4 +609,41 @@ void batterycheck() {
       batterycheck();
     }
   }
+}
+
+void setOffsetsAndSaveToEEPROM() {
+  pitchOffset = receiveIMUData.pitch * -1;
+  rollOffset = receiveIMUData.roll * -1;
+  if(pitchOffset != preferences.getFloat("pitchOffset", 0)){
+    preferences.putFloat("pitchOffset", pitchOffset);
+  }
+  if(rollOffset != preferences.getFloat("rollOffset", 0)){
+    preferences.putFloat("rollOffset", rollOffset);
+  }
+  #ifndef revS2S
+  potOffsetS2S = 0 - (map(analogRead(S2SPot_pin), 0, 4095, 255,-255));
+  #else
+  potOffsetS2S = 0 - (map(analogRead(S2SPot_pin), 0, 4095, -255,255));
+  #endif
+  if(potOffsetS2S != preferences.getInt("potOffsetS2S", 0)) {
+    preferences.putInt("potOffsetS2S", potOffsetS2S);
+  }
+  delay(1000);
+}
+
+
+void wipenvram() {
+  nvs_flash_erase(); // erase the NVS partition and...
+  nvs_flash_init(); // initialize the NVS partition.
+  while(true);
+}
+void setOffsetsONLY() {
+  pitchOffset = 0 - receiveIMUData.pitch;
+  rollOffset = 0 - receiveIMUData.roll;
+  #ifndef revS2S
+  potOffsetS2S = 0 - (map(analogRead(S2SPot_pin), 0, 4095, 255,-255));
+  #else
+  potOffsetS2S = 0 - (map(analogRead(S2SPot_pin), 0, 4095, -255,255));
+  #endif
+  delay(1000);
 }

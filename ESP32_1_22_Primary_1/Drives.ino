@@ -18,7 +18,8 @@ void S2S_Movement(){
   
   Setpoint2 = current_pos_S2S;
   
-  Input2 = (receiveIMUData.roll*-1)- IMUDeadzone;   // ****add a bit to the IMU to get the real middle point
+//  Input2 = (receiveIMUData.roll*-1)- IMUDeadzone;   // ****add a bit to the IMU to get the real middle point
+  Input2 = (receiveIMUData.roll + rollOffset);   // ****Add Offsets to the IMU readings (setting Zero)
   
   Setpoint2 = constrain(Setpoint2, -45,45);  // Allow the S2S to only move 45 each direction
   
@@ -34,13 +35,14 @@ void S2S_Movement(){
   
 //  S2S_pot = S2S_pot-2;
   
-  Input1  = S2S_pot;  // Take in the value from Potentiometer with map angle of -45 to 45
+//  Input1  = S2S_pot;  // Take in the value from Potentiometer with map angle of -45 to 45
+  Input1  = S2S_pot + potOffsetS2S;  // Take in the value from Potentiometer with offests (setting Zero)
   Input1 = constrain(Input1,-45,45);
   Setpoint1 = constrain(Setpoint1, -45,45); // take in joystick values defined by the output from the Potentiometer
   Setpoint1 = map(Setpoint1,45,-45,-45,45);
   
   PID1_S2S.Compute();
-//  if ((Setpoint1 <= -10) && (Setpoint1 >= 10)) {
+  if ((abs(Input1) < S2S_potDeadzone ) || (abs(Input1) > S2S_potDeadzone)) {
     if (Output1 < 0) // decide which way to turn the wheels based on deadSpot variable
     {
       Output1_S2S_pwm = abs(Output1);
@@ -68,7 +70,7 @@ void S2S_Movement(){
       digitalWrite(S2S_pin_1, LOW);
       digitalWrite(S2S_pin_2, LOW); // S2S Stopped (brake)
     }
-//  }
+  }
   if (controllerConnected && enableDrive && !buttonsL.l1 && !buttonsR.l1) { // Check to ensure that L1 is not pressed on either Dome or Drive Controllers
     analogWrite(S2S_pwm, Output1_S2S_pwm);
   }
@@ -157,7 +159,8 @@ void drive_Movement(){
   
   Setpoint3 = current_pos_drive;
   
-  Input3 = receiveIMUData.pitch+3;
+//  Input3 = receiveIMUData.pitch+3;
+  Input3 = receiveIMUData.pitch + pitchOffset;
   
   PID_Drive.Compute();
   

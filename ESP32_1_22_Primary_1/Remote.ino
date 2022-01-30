@@ -82,20 +82,34 @@ void receiveRemote() {
 
 // MP3 Trigger Commands being sent to the 32u4 0-9 currently, 
 // you can add as many as you wish and even based on multiple button commands
-  if (buttonsR.up) {
+
+  if (buttonsR.up && buttonsL.up) { 
+        setOffsetsAndSaveToEEPROM(); // If both Ups are pushed - call Store Configuration in Preferences (EEPROM)
+        sendTo32u4Data.soundcmd = 99;  // Play surprised!
+  } else if (buttonsR.up && !buttonsL.up) {
     sendTo32u4Data.soundcmd = 1;  // Play surprised!
   } else if (buttonsR.right) { // check for key press
     sendTo32u4Data.soundcmd = 2;  // Play quick answer!
   } else if (buttonsR.down) { // check for key press
-    sendTo32u4Data.soundcmd = 3;  // Play chatter!
+    if (buttonsL.down) {
+        wipenvram(); // If both Ups are pushed - call Store Configuration in Preferences (EEPROM)
+        sendTo32u4Data.soundcmd = 99;  // Play surprised!
+      } else sendTo32u4Data.soundcmd = 3;  // Play surprised!
   } else if (buttonsR.left) { // check for key press
     sendTo32u4Data.soundcmd = 4;  // Play surprised!
   } else if (buttonsL.up) { // check for key press
+    if (buttonsR.up) {
+        setOffsetsAndSaveToEEPROM(); // If both Ups are pushed - call Store Configuration in Preferences (EEPROM)
+        sendTo32u4Data.soundcmd = 99;  // Play surprised!
+      } else sendTo32u4Data.soundcmd = 1;  // Play surprised!
     sendTo32u4Data.soundcmd = 5;  // Play surprised!
   } else if (buttonsL.right) { // check for key press
     sendTo32u4Data.soundcmd = 6;  // Play surprised!
   } else if (buttonsL.down) { // check for key press
-    sendTo32u4Data.soundcmd = 7;  // Play surprised!
+    if (buttonsR.down) {
+    wipenvram(); // If both Ups are pushed - call Store Configuration in Preferences (EEPROM)
+    sendTo32u4Data.soundcmd = 99;  // Play surprised!
+      } else sendTo32u4Data.soundcmd = 7;  // Play surprised!
   } else if (buttonsL.left) { // check for key press
     sendTo32u4Data.soundcmd = 8;  // Play surprised!
   } else if (buttonsR.circle) { // check for key press

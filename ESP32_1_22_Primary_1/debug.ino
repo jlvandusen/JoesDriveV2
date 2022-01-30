@@ -36,6 +36,17 @@
      
   #endif
 
+  #ifdef debugPreferences
+  
+     SerialDebug.print(F("Pitch: ")); SerialDebug.print(receiveIMUData.pitch); SerialDebug.print("\t");
+     SerialDebug.print(F("Roll: ")); SerialDebug.print(receiveIMUData.roll); SerialDebug.print("\t"); 
+     SerialDebug.print(F("pitchoffset: ")); SerialDebug.print(pitchOffset); SerialDebug.print("\t"); 
+     SerialDebug.print(F("rolloffset: ")); SerialDebug.print(rollOffset); SerialDebug.print("\t");   
+     SerialDebug.print(F("POT: ")); SerialDebug.print(S2S_pot); SerialDebug.print("\t"); 
+     SerialDebug.print(F("POToffset: ")); SerialDebug.print(potOffsetS2S); SerialDebug.println("\t"); 
+     
+  #endif
+
   #ifdef debugEasyTransfer
   
      SerialDebug.print(F("driveEnabled: ")); Serial.print(sendTo32u4Data.driveEnabled); Serial.print("\t"); 
@@ -62,6 +73,9 @@
   
     SerialDebug.print(F("Setpoint2: ")); SerialDebug.print(Setpoint2); SerialDebug.print('\t');
     SerialDebug.print(F("S2S_pot: ")); SerialDebug.print(S2S_pot); SerialDebug.print('\t');
+    SerialDebug.print(F("Setpoint1/Output2: ")); SerialDebug.print(Setpoint1); SerialDebug.print('\t');
+    SerialDebug.print(F("diff_S2S: ")); SerialDebug.print(diff_S2S); SerialDebug.print('\t');
+    SerialDebug.print(F("Input1: ")); SerialDebug.print(Input1); SerialDebug.print('\t');
     SerialDebug.print(F("Input2: ")); SerialDebug.print(Input2); SerialDebug.println('\t');
 
   #endif

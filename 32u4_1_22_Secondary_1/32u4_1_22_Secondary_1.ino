@@ -96,7 +96,7 @@
   #include <SPI.h>
   #include <SD.h>
   #include <Adafruit_VS1053.h>
-// These are the pins used
+  
   #define VS1053_RESET   -1     // VS1053 reset pin (not used!)  
   #define VS1053_CS       6     // VS1053 chip select pin (output)
   #define VS1053_DCS     10     // VS1053 Data/command select pin (output)
@@ -133,6 +133,7 @@ RECEIVE_DATA_STRUCTURE receiveFromESP32Data; //give a name to the group of data 
 
 struct SEND_DATA_STRUCTURE { 
   int16_t tiltAngle;
+  int8_t sndplaying;
 };
 SEND_DATA_STRUCTURE sendToM0Data; //give a name to the group of data for sending
 
