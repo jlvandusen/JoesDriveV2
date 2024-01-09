@@ -1,10 +1,12 @@
 /*
- * Joe's Drive  - V2 01/2022
- * Secondary 32u4 Dome Controls and PSI Body lights v7.1 PCB Board
+ * Joe's Drive  - V2.1 01/2024
+ * Secondary 32u4 Dome movement and PSI Body lights v7.6 PCB Board
  * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
- * Utilizes Feather 32u4 Basic Proto From Adafruit: https://www.adafruit.com/product/2771
+ * Utilizes Feather 32u4 Basic Proto From Adafruit: 
+ * https://www.adafruit.com/product/2771
  * https://learn.adafruit.com/adafruit-feather-32u4-basic-proto/pinouts
  * Or Feather 32u4 Feather M0 Basic Proto
+ * https://www.adafruit.com/product/2772
  * https://learn.adafruit.com/adafruit-feather-m0-basic-proto/pinouts
  * 
  * Libraries Required
