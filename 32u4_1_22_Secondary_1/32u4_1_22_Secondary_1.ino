@@ -48,8 +48,8 @@
 /*  MP3 Trigger types supported
  *  Still to do: VS105 and Zio
 */
-//#define NoMP3 // Dont want to use MP3 services on this board
-#define MP3Sparkfun // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
+#define NoMP3 // Dont want to use MP3 services on this board
+//#define MP3Sparkfun // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
 //#define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
 //#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
 
@@ -81,7 +81,12 @@
 #define leftServoOffset -7
 #define rightServoOffset 0
 
-#ifndef  MP3VS105
+#ifdef MP3Zio
+  #include <Wire.h>
+  byte mp3Address = 0x37; //Unshifted 7-bit default address for Qwiic MP3
+#endif
+
+#ifdef  MP3Sparkfun
   #include <Wire.h>
   #include "SparkFun_Qwiic_MP3_Trigger_Arduino_Library.h" // http://librarymanager/All#SparkFun_MP3_Trigger
   MP3TRIGGER mp3;
@@ -89,11 +94,10 @@
   byte adjustableNumber = 1;
   int randomsound = random(1,55);
   int8_t sound;
-
-#else
-
+#endif
 
 
+#ifdef MP3VS105
 // include SPI, MP3 and SD libraries
   #include <SPI.h>
   #include <SD.h>
@@ -106,7 +110,7 @@
   // DREQ should be an Int pin *if possible* (not possible on 32u4)
   #define VS1053_DREQ     9     // VS1053 Data request, ideally an Interrupt pin
 
-Adafruit_VS1053_FilePlayer musicPlayer = 
+  Adafruit_VS1053_FilePlayer musicPlayer = 
   Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
   int randomsound = random(1,55);
   int8_t sound;
@@ -188,7 +192,7 @@ void setup(){
   Serial.begin(115200);
   Serial1.begin(74880); // 74880 78440 57600
 
-#ifndef  MP3VS105
+#ifdef  MP3Sparkfun
   delay(5000);
   Wire.begin();
   //Check to see if MP3 is present
@@ -212,8 +216,9 @@ void setup(){
   Serial.print("Firmware version: ");
   Serial.println(mp3.getVersion());
   
-#else
+#endif
 
+#ifdef MP3VS105
   if (! musicPlayer.begin()) { // initialise the music player
      Serial.println(F("Couldn't find VS1053, do you have the right pins defined?"));
      while (1);
@@ -243,6 +248,17 @@ void setup(){
 // audio playing
 //  musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT);  // DREQ int
 
+#endif
+
+#ifdef MP3Zio
+  if(mp3IsPresent() == false)
+  {
+    Serial.println("Qwiic MP3 failed to respond. Please check wiring and possibly the I2C address. Freezing...");
+    while(1);
+  }
+
+  mp3ChangeVolume(10); //Volume can be 0 (off) to 31 (max)
+  
 #endif
 
   myservo2.attach(leftServo_pin);
@@ -278,7 +294,9 @@ void loop() {
 //  domeServoMovement();
   Timechecks(); 
   debugRoutines();
-  mp3play();
+  #ifndef NoMP3
+    mp3play();
+  #endif
 }
 
 void Timechecks() {

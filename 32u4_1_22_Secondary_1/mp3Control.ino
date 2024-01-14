@@ -1,6 +1,6 @@
 void mp3play (){
   soundcmd = receiveFromESP32Data.soundcmd;
-#ifndef MP3VS105
+#ifdef MP3Sparkfun
   if (mp3.isConnected()) {  // check if the MP3 Trigger is connected via i2c
     if (soundcmd != 0) {
       if (soundcmd == 9) soundcmd = randomsound;
