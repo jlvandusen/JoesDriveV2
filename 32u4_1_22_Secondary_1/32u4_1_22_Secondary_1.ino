@@ -1,6 +1,6 @@
 /*
- * Joe's Drive  - V2.1 01/2024
- * Secondary 32u4 Dome movement and PSI Body lights v7.6 PCB Board
+ * Joe's Drive  - V3.0 01/2024
+ * Secondary 32u4 Dome movement and PSI Body lights v8.0 PCB Board
  * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
  * Utilizes Feather 32u4 Basic Proto From Adafruit: 
  * https://www.adafruit.com/product/2771
@@ -12,9 +12,13 @@
  * Libraries Required
  * Feather 32u4 Board Libraries: https://learn.adafruit.com/adafruit-feather-32u4-basic-proto/using-with-arduino-ide
  * Encoder for the ENC on Dome Spin: https://github.com/PaulStoffregen/Encoder
- * Adafruit VS1053 Featherwing MusicPlayer: https://github.com/adafruit/Adafruit_VS1053_Library
  * Servo library - https://github.com/netlabtoolkit/VarSpeedServo
+ *
+ * OPTIONS for Audio Support:
+ * DFPlayer Mini libraries: https://github.com/DFRobot/DFRobotDFPlayerMini
  * Sparkfun MP3 qwiic/i2c Trigger -  https://github.com/sparkfun/SparkFun_Qwiic_MP3_Trigger_Arduino_Library 
+ *
+ * Dome Communication:
  * Utilizes ESP32NOW technology over WiFi to talk between Dome and Body - need to capture the Wifi MAC during bootup.
  * replace this with the mac of dome uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
  * 
@@ -49,9 +53,10 @@
  *  Still to do: VS105 and Zio
 */
 #define NoMP3 // Dont want to use MP3 services on this board
-//#define MP3Sparkfun // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
-//#define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
-//#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
+// #define MP3Sparkfun // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
+// #define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
+// #define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105 <-- NA doesnt work
+// #define MP3DFPlayer // Enable onboard DFPLAYER over software serial using A3/A4 on M0 Proto 32u4
 
 
 /* Debug Printlines */
@@ -80,6 +85,20 @@
 
 #define leftServoOffset -7
 #define rightServoOffset 0
+
+#ifdef MP3DFPlayer
+//  #include "DFRobotDFPlayerMini.h"  // used for arduino
+  #include <SoftwareSerial.h>
+  #include <DFRobotDFPlayerMini.h>
+  #define SERIAL2_BAUD_RATE 9600  // 74880 57600
+  #define SERIAL2_RX_PIN A4
+  #define SERIAL2_TX_PIN A3
+  SoftwareSerial Serial2 (SERIAL2_RX_PIN, SERIAL2_TX_PIN);
+  // Serial2.begin(baud-rate, protocol, RX pin, TX pin);
+  DFRobotDFPlayerMini myDFPlayer;
+  int randomsound = random(1,55);
+  int8_t sound;
+#endif
 
 #ifdef MP3Zio
   #include <Wire.h>
@@ -191,6 +210,24 @@ PID myPID_domeSpinServoPid(&Input_domeSpinServoPid, &Output_domeSpinServoPid, &S
 void setup(){
   Serial.begin(115200);
   Serial1.begin(74880); // 74880 78440 57600
+  #ifdef MP3DFPlayer
+    Serial2.begin(SERIAL2_BAUD_RATE);
+  #endif
+
+#ifdef MP3DFPlayer
+  myDFPlayer.begin(Serial2);
+  Serial.println(F("Initializing DFPlayer ... (May take 3~5 seconds)"));
+  if (!myDFPlayer.begin(Serial2, /*isACK = */true, /*doReset = */true)) {  //Use serial to communicate with mp3.
+    Serial.println(F("Unable to begin:"));
+    Serial.println(F("1.Please recheck the connection!"));
+    Serial.println(F("2.Please insert the SD card!"));
+    while(true);
+  }
+  Serial.println(F("DFPlayer Mini online."));
+  myDFPlayer.setTimeOut(500); //Set serial communictaion time out 500ms
+  myDFPlayer.volume(25);  //Set volume value (0~30).
+  myDFPlayer.outputDevice(DFPLAYER_DEVICE_SD); //----Set device we use SD as default----
+#endif
 
 #ifdef  MP3Sparkfun
   delay(5000);
