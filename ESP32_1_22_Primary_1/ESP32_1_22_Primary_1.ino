@@ -1,5 +1,5 @@
 /*
- * Joe's Drive  - V2 1/2022
+ * Joe's Drive  - V2 1/2024
  * Primary CPU uses ESP32 HUZZAH32
  * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
  * You will need ESP32 Hardware: 
@@ -28,12 +28,14 @@
 #define DEBUG_PRINT(s) Serial.print(s)
 #define SerialDebug Serial
 
+#define IMU_Bypass
 //#define ESPNOWCONFIG
 //#define debugESPNOW
 //#define debugESPNOWSend
-#define debugPreferences
+//#define debugPreferences
 //#define debug32u4
-//#define debugRemote
+//#define debugNavRemoteRight
+//#define debugNavRemoteLeft
 //#define debugIMU
 //#define debugPOTS
 //#define debugMainDrive
@@ -54,7 +56,7 @@
 // you can use sixaxispair to pair your controllers with the ESP32.
 // https://www.adafruit.com/product/3619
 
-#define MasterNav "7c:9e:bd:d7:63:c6" 
+#define MasterNav "7c:9e:bd:d7:63:c6" // This sets the mac address of the ESP32 to allow your Nav Controller to attach to it using SixAxisPairTool
 
 
 /*
@@ -386,17 +388,20 @@ void setup() {
       }
     }
   #endif
-  for (int i = 0; i <= 10000; i++) {
-    IMUmillis = currentMillis; 
-    IMUconnected = false; 
-    Serial.println("IMU Not Connected");
-    if (recIMU.receiveData()){
-      IMUmillis = currentMillis;
-      IMUconnected = true;
-      Serial.println("IMU Connected");
-      break;
+  
+  #ifndef IMU_Bypass
+    for (int i = 0; i <= 10000; i++) {
+      IMUmillis = currentMillis; 
+      IMUconnected = false; 
+      Serial.println("IMU Not Connected");
+      if (recIMU.receiveData()){
+        IMUmillis = currentMillis;
+        IMUconnected = true;
+        Serial.println("IMU Connected");
+        break;
+      }
     }
-  }
+  #endif
 
   /* Set the pins to correct method for use for the DFRobot Motor Driver */
   pinMode(S2S_pwm, OUTPUT);  // Speed Of Motor2 on Motor Driver 1 
@@ -415,7 +420,7 @@ void setup() {
   if (esp_now_init() != ESP_OK) { // Init ESP-NOW
     Serial.println("Error initializing ESP-NOW");
     return;
-  }
+  } else Serial.println("Finsihed initializing ESP-NOW");
 
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet
@@ -451,7 +456,9 @@ void loop() {
   currentMillis = millis(); 
   if(currentMillis - lastLoopMillis >= 10) {
     lastLoopMillis = currentMillis; 
-    receiveIMU();
+    #ifndef IMU_Bypass
+      receiveIMU();
+    #endif
     receiveRemote();
     S2S_Movement(); 
     drive_Movement(); 
