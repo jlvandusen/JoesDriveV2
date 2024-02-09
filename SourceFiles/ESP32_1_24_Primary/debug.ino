@@ -117,8 +117,10 @@
 
 #ifdef debugFlywheel
 
-    SerialDebug.print(F("flywheel: ")); SerialDebug.print(sendTo32u4Data.flywheel); SerialDebug.print('\t'); 
-    SerialDebug.print(F("flywheel_pwm: ")); SerialDebug.print(Output_flywheel_pwm); SerialDebug.print('\t'); 
+    
+    SerialDebug.print(F("EnableFly: ")); SerialDebug.print(EnableFlywheel); SerialDebug.print('\t'); 
+    SerialDebug.print(F("flywheel: ")); SerialDebug.print(abs(flywheel)); SerialDebug.print('\t'); 
+    SerialDebug.print(F("flywheelRot: ")); SerialDebug.print(flywheelRotation); SerialDebug.print('\t'); 
     SerialDebug.print(F("Joy: ")); SerialDebug.print(buttonsR.rightStickX); SerialDebug.print('\t'); 
     SerialDebug.print(F("ControllerConn.: ")); SerialDebug.print(controllerConnected); SerialDebug.print('\t');
     SerialDebug.print(F("En: ")); SerialDebug.println(enableDrive); 

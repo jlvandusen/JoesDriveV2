@@ -18,7 +18,7 @@
  * https://github.com/br3ttb/Arduino-PID-Library/ - PID Library Official
  * http://www.billporter.info/easytransfer-arduino-library/ - Easy Transfer
  * https://github.com/espressif/arduino-esp32/tree/master/libraries/Preferences - Equivilent to the EEPROM Controls
- *
+ * https://www.andymark.com/products/neverest-classic-60-gearmotor?Power%20Connector=Anderson%20Powerpole%2015A%20(am-3103)&quantity=1> - Dome Rotation with Encoder
  *
  * At rest
  * pitchoffset -1.36
@@ -51,6 +51,10 @@
 // #define debugS2S
 // #define debugSounds
 // #define debugEasyTransfer
+
+/*
+* Controller types - Supporting MOVE and XBOX
+*/
 
 #define MOVECONTROLLER
 //#define XBOXCONTROLLER   
@@ -85,7 +89,6 @@
 #define flyWheelMotor_pin_B 14
 #define voltageSensor_Pin A3 //GPIO 39
 
-// Reverse Drives based on polarity pin connections (reverse Polartity)
 #define revS2S
 //#define revDrive
 #define revGyro
@@ -129,9 +132,11 @@ SDA - General purpose IO pin #23
 #include "wiring_private.h" // pinPeripheral() function
 #include <analogWrite.h>  // https://www.arduinolibraries.info/libraries/esp32-analog-write
 
+#include <Encoder.h> // Include the necessary libraries for the encoder
 /*
  Needed Libraries for ESPNOW to connect to Dome Controller
 */
+
 #include <stdint.h>
 #include <esp_now.h>
 #include "WiFi.h"
@@ -181,8 +186,8 @@ RECEIVE_DATA_STRUCTURE_IMU receiveIMUData;
 */
 #ifdef XBOXCONTROLLER
 struct SEND_DATA_STRUCTURE_32u4{  
-  bool driveEnabled;
-  int8_t domeSpin;
+  bit driveEnabled;
+  int8_t domeSpin; // X only of 
   bool xboxL3;
   int8_t flywheel;
   bool xboxR3;
@@ -199,11 +204,14 @@ struct SEND_DATA_STRUCTURE_32u4{
 #ifdef MOVECONTROLLER
 struct SEND_DATA_STRUCTURE_32u4{  
   bool driveEnabled;
+  // bool reverseDrive; // DriveDirection equivilent
   int8_t domeSpin;
   bool moveL3; // xbox L3 equivilent
   bool moveR3; // xboxR3 equivilent
   int8_t leftStickX;
   int8_t leftStickY;
+  // int8_t rightStickX;
+  // int8_t rightStickY;
   int8_t soundcmd;
   int8_t psiFlash;
   float pitch;
@@ -291,7 +299,8 @@ SoftwareSerial Serial3;
 #define SERIAL3_TX_PIN 23 //SDA - General purpose IO pin #23
 
 unsigned long currentMillis, IMUmillis, lastLoopMillis, lastDomeMillis, rec32u4Millis, lastPrintMillis; 
-bool IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected, DomeServoMode, enableDrive, reverseDrive, enabledDrive;
+// bool EnableFlywheel, IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected, DomeServoMode, enableDrive, enabledDrive;
+bool EnableFlywheel, IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected, DomeServoMode, enableDrive, reverseDrive, enabledDrive;
 
 /* 
  *  Define variables to store incoming readings
@@ -319,7 +328,9 @@ double easing_S2S;
 
 int Output_flywheel_pwm; // variables for PWM controls of flywheel
 int Output_domeSpin_pwm;
-int8_t flywheel;
+int flywheelRotation;
+double flywheel;
+double flywheelEase;
 
 double Pk1 = 14;  //13
 double Ik1 = 0;   //0
@@ -426,7 +437,7 @@ void setup() {
   if (esp_now_init() != ESP_OK) { // Init ESP-NOW
     Serial.println("Error initializing ESP-NOW");
     return;
-  } else Serial.println("Finsihed initializing ESP-NOW");
+  } else Serial.println("Finished initializing ESP-NOW");
 
   // Once ESPNow is successfully Init, we will register for Send CB to
   // get the status of Trasnmitted packet

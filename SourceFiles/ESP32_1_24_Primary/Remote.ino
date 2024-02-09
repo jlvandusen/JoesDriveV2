@@ -47,38 +47,21 @@ void receiveRemote() {
     #define CHECK_BUTTON_PRESSEDR(btn) (previousStateR.btn != buttonsR.btn && buttonsR.btn)
     #define CHECK_BUTTON_PRESSEDL(btn) (previousStateL.btn != buttonsL.btn && buttonsL.btn)
 
-    if(buttonsL.l1){ // Check if the Dome Controller L1 Button is held (Flywheel engaged, dome disengaged)
+    if(buttonsL.l1) { // Check if the Dome Controller L1 Button is held (Flywheel engaged, dome disengaged)
       sendTo32u4Data.domeSpin = 0;
-      flywheel = buttonsR.rightStickX;
-      Output_flywheel_pwm = map(buttonsR.rightStickX,-127,127,-255,255);
-    }
-    else {
-//      sendTo32u4Data.flywheel = 0;
-      Output_flywheel_pwm = 0;
-      
+      EnableFlywheel = true;
+    } else {
+      EnableFlywheel = false;
     }
     if(buttonsR.l1){ // Check if the drive Controller L1 Button is held (Flywheel disengaged, dome engaged)
       flywheel = 0;
       sendTo32u4Data.domeSpin = buttonsR.rightStickX;
-      Output_domeSpin_pwm = map(buttonsR.rightStickX,-127,127,-255,255);
-    }
-    else {
+      // Output_domeSpin_pwm = map(buttonsR.rightStickX,-127,127,-255,255);
+    } else {
       sendTo32u4Data.domeSpin = 0;
       Output_domeSpin_pwm = 0;
-      
     }
     
-////  Example Buttons from Move Controller
-////  buttonsL.down = domeController.state.button.down;
-////  buttonsL.left = domeController.state.button.left;
-////  buttonsL.right = domeController.state.button.right;
-////  buttonsL.ps = domeController.state.button.ps;
-////  buttonsR.circle = driveController.state.button.circle;
-////  buttonsR.cross = driveController.state.button.cross;
-////  buttonsR.up = driveController.state.button.up;
-////  buttonsR.down = driveController.state.button.down;
-////  buttonsR.left = driveController.state.button.left;
-////  buttonsR.right = driveController.state.button.right;
 
 // MP3 Trigger Commands being sent to the 32u4 0-9 currently, 
 // you can add as many as you wish and even based on multiple button commands
@@ -131,22 +114,38 @@ void receiveRemote() {
     }
 
  // Enable or disable Dome motor servo mode
-    if(CHECK_BUTTON_PRESSEDR(l3)){
+    if(CHECK_BUTTON_PRESSEDL(l3)){
       if (DomeServoMode == false) {
         DomeServoMode = true;
+        sendTo32u4Data.moveR3 = true;
         DEBUG_PRINTLN("Dome Servo Mode");
         DEBUG_PRINTLN(DomeServoMode);
       } else {
         DomeServoMode = false; 
         DEBUG_PRINTLN("Dome Servo Disabled");
         DEBUG_PRINTLN(DomeServoMode);
+        sendTo32u4Data.moveR3 = false;
       }
-      sendTo32u4Data.moveR3 = DomeServoMode;
-      if (CHECK_BUTTON_PRESSEDR(ps))
-      {
-        //Quick Shutdown of PS3 Controller
-        Serial.print("\r\nDisconnecting the Drive controller.\r\n");
+    }
+    // if (buttonsL.ps) {
+    //   DEBUG_PRINTLN("Dome Servo Mode");
+    //   if (buttonsL.cross) {
+    //     DEBUG_PRINTLN("Dome Nav PS held");
+    //     DEBUG_PRINTLN("\r\nDisconnecting the Dome controller.\r\n");
+    //     // driveController.disconnect();
+    //     domeController.disconnect();
+    //     ESP.restart();
+    //     enableDrive = false;
+    //   }
+
+    // } 
+    if (buttonsR.ps) {
+        if (buttonsR.cross) {
+        DEBUG_PRINTLN("\r\nDisconnecting the Drive controllers.\r\n");
+        enableDrive = !enableDrive;
         driveController.disconnect();
+        ESP.restart();
+        // domeController.disconnect();
       }
     }
 
@@ -154,14 +153,14 @@ void receiveRemote() {
     if(CHECK_BUTTON_PRESSEDR(l3)){
       if (reverseDrive == false) {
         reverseDrive = true;
-        #ifdef debugRemote
+        // #ifdef debugRemote
         DEBUG_PRINTLN("Drive Reversed");
-        #endif
+        // #endif
       } else {
         reverseDrive = false; 
-        #ifdef debugRemote
+        // #ifdef debugRemote
         DEBUG_PRINTLN("Drive Forward");
-        #endif
+        // #endif
       }
       sendTo32u4Data.moveL3 = reverseDrive; 
     }

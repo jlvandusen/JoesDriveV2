@@ -4,8 +4,12 @@ void S2S_Movement(){
 //  First pin is PWM for speed control 0 - 255
 //  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop
 //  Input1 = Potentiometer, Input2 = IMU
-
-  target_pos_S2S = map(buttonsR.rightStickX, -127,127,-40,40);  //Read in the Move Controller X Axis of Right Stick and force it from 127 extremes to 40
+  if (reverseDrive) {
+    target_pos_S2S = map(buttonsR.rightStickX, -127,127,40,-40);  //Read in the Move Controller X Axis of Right Stick and force it from 127 extremes to 40
+  } else {
+      target_pos_S2S = map(buttonsR.rightStickX, -127,127,-40,40);  //Read in the Move Controller X Axis of Right Stick and force it from 127 extremes to 40
+  }
+  
   
   easing_S2S = 500;  //modify these values for sensitivity
   easing_S2S /= 500;
@@ -18,7 +22,12 @@ void S2S_Movement(){
   
   Setpoint2 = current_pos_S2S;
   
- Input2 = (receiveIMUData.roll*-1)- IMUDeadzone;   // ****add a bit to the IMU to get the real middle point
+//  Input2 = (receiveIMUData.roll*-1)- IMUDeadzone;   // ****add a bit to the IMU to get the real middle point
+  if (reverseDrive) {
+    Input2 = ((receiveIMUData.roll * -1) + rollOffset);   // ****Add Offsets to the IMU readings (setting Zero)
+  } else {
+      Input2 = (receiveIMUData.roll + rollOffset);   // ****Add Offsets to the IMU readings (setting Zero)
+  }
   // Input2 = (receiveIMUData.roll + rollOffset);   // ****Add Offsets to the IMU readings (setting Zero)
   
   Setpoint2 = constrain(Setpoint2, -45,45);  // Allow the S2S to only move 45 each direction
@@ -36,7 +45,13 @@ void S2S_Movement(){
 //  S2S_pot = S2S_pot-2;
   
 //  Input1  = S2S_pot;  // Take in the value from Potentiometer with map angle of -45 to 45
+
   Input1  = S2S_pot + potOffsetS2S;  // Take in the value from Potentiometer with offests (setting Zero)
+  // if (reverseDrive) {
+  //   Input1 = constrain(Input1,45,-45);
+  // } else {
+  //     Input1 = constrain(Input1,-45,45);
+  // }
   Input1 = constrain(Input1,-45,45);
   Setpoint1 = constrain(Setpoint1, -45,45); // take in joystick values defined by the output from the Potentiometer
   Setpoint1 = map(Setpoint1,45,-45,-45,45);
@@ -144,8 +159,12 @@ void drive_Movement(){
 //    digitalWrite(Drive_pin_1, HIGH);  
 //    digitalWrite(Drive_pin_2, LOW);
 //    analogWrite(Drive_pwm, 255);
-
-  target_pos_drive = map(buttonsR.rightStickY, -127,127,-65,65);
+  if (reverseDrive) {
+    target_pos_drive = map(buttonsR.rightStickY, -127,127,65,-65);
+  } else {
+      target_pos_drive = map(buttonsR.rightStickY, -127,127,-65,65);
+  }
+  // target_pos_drive = map(buttonsR.rightStickY, -127,127,-65,65);
   
   easing_drive = 1000;          //modify this value for sensitivity
   easing_drive /= 1000;
@@ -160,7 +179,12 @@ void drive_Movement(){
   Setpoint3 = current_pos_drive;
   
 //  Input3 = receiveIMUData.pitch+3;
-  Input3 = receiveIMUData.pitch + pitchOffset;
+  if (reverseDrive) {
+    Input3 = (receiveIMUData.pitch *-1) + pitchOffset;
+  } else {
+      Input3 = receiveIMUData.pitch + pitchOffset;
+  }
+  // Input3 = receiveIMUData.pitch + pitchOffset;
   
   PID_Drive.Compute();
   
@@ -200,36 +224,28 @@ void drive_Movement(){
 }
 
 void spinFlywheel() {
-  if (flywheel >= 10) {
-    #ifndef revGyro
-    digitalWrite(flyWheelMotor_pin_A, LOW);
-    digitalWrite(flyWheelMotor_pin_B, HIGH); // Motor 1 Forward
-    #else
-    digitalWrite(flyWheelMotor_pin_A, HIGH);
-    digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Forward
-    #endif
-    
-  } else if (flywheel < -10) {
-    #ifndef revGyro
-    digitalWrite(flyWheelMotor_pin_A, HIGH);
-    digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Backward
-    #else
-    digitalWrite(flyWheelMotor_pin_A, LOW);
-    digitalWrite(flyWheelMotor_pin_B, HIGH); // Motor 1 Forward
-    #endif
-
-  } else {
-    digitalWrite(flyWheelMotor_pin_A, LOW);
-    digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Stopped
+  if (EnableFlywheel && enableDrive) {
+    if (reverseDrive) {
+      flywheel = map(buttonsR.rightStickX, -128,128,255,-255);
+      constrain(flywheel, 255, -255);
+    } else {
+        flywheel = map(buttonsR.rightStickX, -128,128,-255,255);
+        constrain(flywheel, -255, 255);
+    }
+    if (flywheel < -10) {
+          digitalWrite(flyWheelMotor_pin_A, LOW);
+          digitalWrite(flyWheelMotor_pin_B, HIGH); // Motor 1 Forward
+          analogWrite(flyWheelMotor_pwm,abs(flywheel));
+        } else if (flywheel > 10) {
+          digitalWrite(flyWheelMotor_pin_A, HIGH);
+          digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Forward
+          analogWrite(flyWheelMotor_pwm,abs(flywheel));
+        } else {
+          digitalWrite(flyWheelMotor_pin_A, LOW);
+          digitalWrite(flyWheelMotor_pin_A, LOW); // Motor 1 Forward
+        }
+    analogWrite(flyWheelMotor_pwm,abs(flywheel));
   }
-  if (controllerConnected && enableDrive && buttonsL.l1){
-    analogWrite(flyWheelMotor_pwm,abs(Output_flywheel_pwm));
-  }
-  else {
-    digitalWrite(flyWheelMotor_pin_A, LOW);
-    digitalWrite(flyWheelMotor_pin_B, LOW); // Motor 1 Stopped
-  }
-  
 }
 
 //void autoDisableMotors(){
