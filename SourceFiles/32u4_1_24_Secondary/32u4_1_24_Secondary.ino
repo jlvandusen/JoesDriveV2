@@ -35,7 +35,7 @@
 // #define debugEasyTransfer
 // #define debugHALLFull
 // #define debugHALL
-#define debugENC
+// #define debugENC
 // #define debugSounds
 
 /*  Controller types: Currently PS3 Move Controllers and PS3/4 Joystick supported
@@ -48,10 +48,10 @@
 /*  MP3 Trigger types supported
  *  Still to do: VS105 and Zio
 */
-//#define NoMP3 // Dont want to use MP3 services on this board
-#define MP3Sparkfun // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
-//#define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
-//#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
+// #define NoMP3 // Dont want to use MP3 services on this board
+// #define MP3Sparkfun // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
+// #define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
+// #define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
 
 
 /* Debug Printlines */
@@ -82,7 +82,7 @@
 #define leftServoOffset -7
 #define rightServoOffset 0
 
-#ifndef  MP3VS105
+#ifdef  MP3Sparkfun
   #include <Wire.h>
   #include "SparkFun_Qwiic_MP3_Trigger_Arduino_Library.h" // http://librarymanager/All#SparkFun_MP3_Trigger
   MP3TRIGGER mp3;
@@ -90,8 +90,9 @@
   byte adjustableNumber = 1;
   int randomsound = random(1,55);
   int8_t sound;
+#endif
 
-#else
+#ifdef MP3VS105
 
 // include SPI, MP3 and SD libraries
   #include <SPI.h>
@@ -190,7 +191,7 @@ void setup(){
   Serial.begin(115200);
   Serial1.begin(74880); // 74880 78440 57600
 
-#ifndef  MP3VS105
+#ifdef MP3Sparkfun
   delay(5000);
   Wire.begin();
   //Check to see if MP3 is present
@@ -215,8 +216,9 @@ void setup(){
 
   Serial.print("Firmware version: ");
   Serial.println(mp3.getVersion());
-  
-#else
+#endif
+
+#ifdef MP3VS105
 
   if (! musicPlayer.begin()) { // initialise the music player
      Serial.println(F("Couldn't find VS1053, do you have the right pins defined?"));
@@ -246,7 +248,6 @@ void setup(){
 // If DREQ is on an interrupt pin we can do background
 // audio playing
 //  musicPlayer.useInterrupt(VS1053_FILEPLAYER_PIN_INT);  // DREQ int
-
 #endif
 
   myservo2.attach(leftServo_pin);
