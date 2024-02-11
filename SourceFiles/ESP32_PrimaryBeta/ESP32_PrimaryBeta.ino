@@ -34,7 +34,7 @@
 
 #define DEBUG_PRINTLN(s) Serial.println(s)
 #define DEBUG_PRINT(s) Serial.print(s)
-#define SerialDebug Serial
+#define SerialDebug Serial  // Where you wish to send the output for debug (Define which SerialX)
 
 // #define IMU_Bypass
 // #define ESPNOWCONFIG
@@ -63,11 +63,12 @@
 /*
   MAC ADDRESS DEFINITIONS
   Signifies the primary MAC of the ESP32/USB BT chip
+  Bluetooth address of this ESP32 device. If you already have a Shadow system configured
+  the easiest thing is reuse the address of your USB Bluetooth dongle here. Alternatively,
+  you can use sixaxispair to pair your controllers with the ESP32.
+  https://www.adafruit.com/product/3619
+
 */
-// Bluetooth address of this ESP32 device. If you already have a Shadow system configured
-// the easiest thing is reuse the address of your USB Bluetooth dongle here. Alternatively,
-// you can use sixaxispair to pair your controllers with the ESP32.
-// https://www.adafruit.com/product/3619
 
 #define MasterNav "7c:9e:bd:d7:63:c6" // This sets the mac address of the ESP32 to allow your Nav Controller to attach to it using SixAxisPairTool
 
@@ -93,22 +94,9 @@
 // #define revDrive
 // #define revGyro
 
-/*
- * ESP32 FEATHER INFORMATION
- * Chip used: Adafruit ESP32 HUZZAH32 with stacking headers https://www.adafruit.com/product/3619
-A0 - this is an analog input A0 and also an analog output DAC2. It can also be used as a GPIO #26. It uses ADC #2
-A1 - this is an analog input A1 and also an analog output DAC1. It can also be used as a GPIO #25. It uses ADC #2
-A2 - this is an analog input A2 and also GPI #34. Note it is not an output-capable pin! It uses ADC #1
-A3 - this is an analog input A3 and also GPI #39. Note it is not an output-capable pin! It uses ADC #1
-A4 - this is an analog input A4 and also GPI #36. Note it is not an output-capable pin! It uses ADC #1
-A5 - this is an analog input A5 and also GPIO #4. It uses ADC #2
-21 - General purpose IO pin #21
-SCL - General purpose IO pin #22
-SDA - General purpose IO pin #23
- */
 
 /*
-  LIBRARY DEFINITIONS
+ * LIBRARY DEFINITIONS
 */
 
 /*
@@ -292,6 +280,8 @@ SoftwareSerial Serial3;
 unsigned long currentMillis, IMUmillis, lastLoopMillis, lastDomeMillis, rec32u4Millis, lastPrintMillis; 
 // bool EnableFlywheel, IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected, DomeServoMode, enableDrive, enabledDrive;
 bool EnableFlywheel, IMUconnected, controllerConnected, Send_Rec, feather2Connected, drivecontrollerConnected, domecontrollerConnected, DomeServoMode, enableDrive, reverseDrive, enabledDrive;
+bool autoDisableDoubleCheck, autoDisable, autoDisableState;
+unsigned long autoDisableMotorsMillis, autoDisableDoubleCheckMillis;
 
 /* 
  *  Define variables to store incoming readings
@@ -300,19 +290,16 @@ int incomingPSI = 0;
 byte incomingBTN = 0;
 float incomingBAT = 0;      
 
-
-//int pot_S2S;   // target position/inout
-
 int current_pos_drive;  // variables for smoothing main drive
 int target_pos_drive;
-float IMUDeadzone = .05;   // target fluctuating between for IMU
+
+float Drive_IMUDeadzone = 5;   // target fluctuating between for IMU
+float S2S_potDeadzone = 5; // 3
+
 int diff_drive; // difference of position
 double easing_drive;
-
 float IMUFiltered, pitchOffset, rollOffset;
 double S2S_pot, potOffsetS2S;
-// int S2S_pot, potOffsetS2S;
-int S2S_potDeadzone = 10; // 3
 int current_pos_S2S;  // variables for smoothing S2S
 int target_pos_S2S;
 int diff_S2S; // difference of position
@@ -474,6 +461,7 @@ void loop() {
     sendDataTo32u4();
     sendESPNOW();
     spinFlywheel();
+    autoDisableMotors();
     if(currentMillis - lastPrintMillis >= 70) {
       lastPrintMillis = currentMillis;
       debugRoutines();
@@ -573,93 +561,4 @@ void sendESPNOW() {
 //}
 
 
-void BatteryLevel(){
-  Serial.print("Nav1 Controller battery level is: ");
-  switch (driveController.state.status.battery){
-    case PSController::kHigh:
-    Serial.println("High");
-    break;
-    case PSController::kFull:
-    Serial.println("High");
-    break;
-    case PSController::kCharging:
-    Serial.println("Charging");
-    break;
-    case PSController::kLow:
-    Serial.println("Low");
-    break;
-    case PSController::kDying:
-    Serial.println("Critical");
-    break;
-    case PSController::kShutdown:
-    Serial.println("Shutting Down");
-    break;
-  }
-}
 
-   //------------------ Battery -------------------------
-void batterycheck() {
-  if (driveController.isConnected()) {
-    if (driveController.state.status.battery == PSController::kCharging ) Serial.println("The drive controller battery charging");
-    else if (driveController.state.status.battery == PSController::kFull ) Serial.println("The drive controller battery charge is FULL");
-    else if (driveController.state.status.battery == PSController::kHigh ) Serial.println("The drive controller battery charge is HIGH");
-    else if (driveController.state.status.battery == PSController::kLow ) Serial.println("The drive controller battery charge is LOW");
-    else if (driveController.state.status.battery == PSController::kDying ) Serial.println("The drive controller battery charge is DYING");
-    else if (driveController.state.status.battery == PSController::kShutdown ) Serial.println("The drive controller battery charge is SHUTDOWN");
-    else {
-      Serial.println("Checking drive controller battery charge");
-//      Serial.println(driveController.state.status.battery);
-      batterycheck();
-    }
-  }
-    if (domeController.isConnected()) {
-    if (domeController.state.status.battery == PSController::kCharging ) Serial.println("The dome controller battery charging");
-    else if (domeController.state.status.battery == PSController::kFull ) Serial.println("The dome controller battery charge is FULL");
-    else if (domeController.state.status.battery == PSController::kHigh ) Serial.println("The dome controller battery charge is HIGH");
-    else if (domeController.state.status.battery == PSController::kLow ) Serial.println("The dome controller battery charge is LOW");
-    else if (domeController.state.status.battery == PSController::kDying ) Serial.println("The dome controller battery charge is DYING");
-    else if (domeController.state.status.battery == PSController::kShutdown ) Serial.println("The dome controller battery charge is SHUTDOWN");
-    else {
-      Serial.println("Checking dome controller battery charge");
-//      Serial.println(domeController.state.status.battery);
-      batterycheck();
-    }
-  }
-}
-
-void setOffsetsAndSaveToEEPROM() {
-  pitchOffset = receiveIMUData.pitch * -1;
-  rollOffset = receiveIMUData.roll * -1;
-  if(pitchOffset != preferences.getFloat("pitchOffset", 0)){
-    preferences.putFloat("pitchOffset", pitchOffset);
-  }
-  if(rollOffset != preferences.getFloat("rollOffset", 0)){
-    preferences.putFloat("rollOffset", rollOffset);
-  }
-  #ifndef revS2S
-  potOffsetS2S = 0 - (map(analogRead(S2SPot_pin), 0, 4095, 255,-255));
-  #else
-  potOffsetS2S = 0 - (map(analogRead(S2SPot_pin), 0, 4095, -255,255));
-  #endif
-  if(potOffsetS2S != preferences.getInt("potOffsetS2S", 0)) {
-    preferences.putInt("potOffsetS2S", potOffsetS2S);
-  }
-  delay(1000);
-}
-
-
-void wipenvram() {
-  nvs_flash_erase(); // erase the NVS partition and...
-  nvs_flash_init(); // initialize the NVS partition.
-  while(true);
-}
-void setOffsetsONLY() {
-  pitchOffset = 0 - receiveIMUData.pitch;
-  rollOffset = 0 - receiveIMUData.roll;
-  #ifndef revS2S
-  potOffsetS2S = 0 - (map(analogRead(S2SPot_pin), 0, 4095, 255,-255));
-  #else
-  potOffsetS2S = 0 - (map(analogRead(S2SPot_pin), 0, 4095, -255,255));
-  #endif
-  delay(1000);
-}

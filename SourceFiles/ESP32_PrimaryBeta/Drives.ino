@@ -133,7 +133,6 @@ void drive_Movement(){
 // Now 'filteredValue' contains the filtered IMU feedback
 // input3 = filteredValue;
 
-//  Input3 = receiveIMUData.pitch+3;
 #ifndef revDrive
   if (reverseDrive) {
     Input3 = receiveIMUData.pitch + pitchOffset;
@@ -210,43 +209,43 @@ void spinFlywheel() {
   }
 }
 
-//void autoDisableMotors(){
-//  // buttonsR.rightStickY = Main Drive Forward and Backward
-//  // buttonsR.rightStickX = S2S Steering using tilt
-//  if((buttonsR.rightStickY > joystickDeadZoneRange && buttonsR.rightStickY < joystickDeadZoneRange) && (buttonsR.rightStickX > joystickDeadZoneRange && buttonsR.rightStickX < joystickDeadZoneRange) && (buttonsL.leftStickX > joystickDeadZoneRange && buttonsL.leftStickX < joystickDeadZoneRange) && (buttonsL.leftStickY < joystickDeadZoneRange && buttonsL.leftStickY > joystickDeadZoneRange) && (autoDisableState == 0)) {
-//    autoDisableMotorsMillis = millis();
-//    autoDisableState = 1;
-//  } else if(buttonsR.rightStickY < joystickDeadZoneRange || buttonsR.rightStickY > joystickDeadZoneRange || buttonsR.rightStickY < joystickDeadZoneRange || buttonsR.rightStickY > joystickDeadZoneRange || buttonsL.leftStickX < joystickDeadZoneRange || buttonsL.leftStickX > joystickDeadZoneRange || buttonsL.leftStickY > joystickDeadZoneRange || buttonsL.leftStickY < joystickDeadZoneRange) {
-//    autoDisableState = 0;     
-//    autoDisableDoubleCheck = 0; 
-//    autoDisable = 0;  
-//  }
-//          
-//  if(autoDisableState == 1 && (millis() - autoDisableMotorsMillis >= 3000) && Output_S2S_Stabilization < 25 && Output_Drive_Stabilization < 8){
-//    digitalWrite(Drive_pin_1, 0);
-//    digitalWrite(Drive_pin_2, 0);
-//    digitalWrite(S2S_pin_1, 0);
-//    digitalWrite(S2S_pin_2, 0);
-//    digitalWrite(flyWheelMotor_pin_A, 0);
-//    digitalWrite(flyWheelMotor_pin_B, 0);
-//    autoDisable = 1;
-//      
-//  }else if(Output_S2S_Stabilization > 50 || Output_Drive_Stabilization > 20){
-//    autoDisableState = 0;
-//    autoDisableDoubleCheck = 0;  
-//    autoDisable = 0;    
-//  }else if((Output_S2S_Stabilization > 25 || Output_Drive_Stabilization > 8) && autoDisableDoubleCheck == 0){
-//    autoDisableDoubleCheckMillis = millis();
-//    autoDisableDoubleCheck = 1;
-//     
-//  } else if((autoDisableDoubleCheck == 1) && (millis() - autoDisableDoubleCheckMillis >= 100)){
-//    if(Output_S2S_Stabilization > 30 || Output_Drive_Stabilization > 8){ 
-//      autoDisableState = 0;
-//      autoDisableDoubleCheck = 0;
-//      autoDisable = 0;
-//    }else{
-//      autoDisableDoubleCheck = 0;
-//    }
-//  } 
-//      
-//}
+void autoDisableMotors(){
+ // buttonsR.rightStickY = Main Drive Forward and Backward
+ // buttonsR.rightStickX = S2S Steering using tilt
+ if((buttonsR.rightStickY > -joystickDeadZoneRange && buttonsR.rightStickY < joystickDeadZoneRange) && (buttonsR.rightStickX > -joystickDeadZoneRange && buttonsR.rightStickX < joystickDeadZoneRange) && (buttonsL.leftStickX > -joystickDeadZoneRange && buttonsL.leftStickX < joystickDeadZoneRange) && (buttonsL.leftStickY < joystickDeadZoneRange && buttonsL.leftStickY > -joystickDeadZoneRange) && (autoDisableState == 0)) {
+   autoDisableMotorsMillis = millis();
+   autoDisableState = 1;
+ } else if (buttonsR.rightStickY < -joystickDeadZoneRange || buttonsR.rightStickY > joystickDeadZoneRange || buttonsR.rightStickY < -joystickDeadZoneRange || buttonsR.rightStickY > joystickDeadZoneRange || buttonsL.leftStickX < -joystickDeadZoneRange || buttonsL.leftStickX > joystickDeadZoneRange || buttonsL.leftStickY > joystickDeadZoneRange || buttonsL.leftStickY < -joystickDeadZoneRange) {
+   autoDisableState = 0;     
+   autoDisableDoubleCheck = 0; 
+   autoDisable = 0;  
+ }
+         
+ if(autoDisableState == 1 && (millis() - autoDisableMotorsMillis >= 3000) && Input3 < 25 && Input1 < 8){
+   digitalWrite(Drive_pin_1, LOW);
+   digitalWrite(Drive_pin_2, LOW);
+   digitalWrite(S2S_pin_1, LOW);
+   digitalWrite(S2S_pin_2, LOW);
+   digitalWrite(flyWheelMotor_pin_A, LOW);
+   digitalWrite(flyWheelMotor_pin_B, LOW);
+   autoDisable = 1;
+     
+ }else if(Input3 > 50 || Input1 > 20){
+   autoDisableState = 0;
+   autoDisableDoubleCheck = 0;  
+   autoDisable = 0;    
+ }else if((Input3 > 25 || Input1 > 8) && autoDisableDoubleCheck == 0){
+   autoDisableDoubleCheckMillis = millis();
+   autoDisableDoubleCheck = 1;
+    
+ } else if((autoDisableDoubleCheck == 1) && (millis() - autoDisableDoubleCheckMillis >= 100)){
+   if(Input3 > 30 || Input1 > 8){ 
+     autoDisableState = 0;
+     autoDisableDoubleCheck = 0;
+     autoDisable = 0;
+   }else{
+     autoDisableDoubleCheck = 0;
+   }
+ } 
+     
+}

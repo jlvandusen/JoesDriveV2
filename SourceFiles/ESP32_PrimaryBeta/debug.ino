@@ -1,151 +1,129 @@
-  void debugRoutines(){
+void debugRoutines(){
   
   #ifdef debugNavRemoteRight
-    SerialDebug.print(buttonsR.rightStickY); SerialDebug.print('\t');
-    SerialDebug.print(buttonsR.rightStickX); SerialDebug.print('\t');
-    SerialDebug.print(buttonsR.l1); SerialDebug.print('\t');
-    SerialDebug.print(buttonsR.l2); SerialDebug.print('\t');
-    SerialDebug.print(buttonsR.up); SerialDebug.print('\t');
-    SerialDebug.print(buttonsR.down); SerialDebug.print('\t');
-    SerialDebug.print(buttonsR.left); SerialDebug.print('\t');
-    SerialDebug.print(buttonsR.right); SerialDebug.print('\t');
-    SerialDebug.print(buttonsR.ps); SerialDebug.print('\t');
-    SerialDebug.print(buttonsR.l3); SerialDebug.print("\r\n");
+    DEBUG_PRINT(buttonsR.rightStickY); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsR.rightStickX); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsR.l1); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsR.l2); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsR.up); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsR.down); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsR.left); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsR.right); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsR.ps); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsR.l3); DEBUG_PRINT("\r\n");
   #endif
 
-    #ifdef debugNavRemoteLeft
-    
-    SerialDebug.print(F("32u4DomeY: ")); SerialDebug.print(sendTo32u4Data.leftStickY); SerialDebug.print('\t');
-    SerialDebug.print(F("32u4DomeX: ")); SerialDebug.print(sendTo32u4Data.leftStickX); SerialDebug.print('\t');
-    SerialDebug.print(buttonsL.leftStickY); SerialDebug.print('\t');
-    SerialDebug.print(buttonsL.leftStickX); SerialDebug.print('\t');
-    SerialDebug.print(buttonsL.l1); SerialDebug.print('\t');
-    SerialDebug.print(buttonsL.l2); SerialDebug.print('\t');
-    SerialDebug.print(buttonsL.l3); SerialDebug.print('\t');
-    SerialDebug.print(buttonsL.up); SerialDebug.print('\t');
-    SerialDebug.print(buttonsL.down); SerialDebug.print('\t');
-    SerialDebug.print(buttonsL.left); SerialDebug.print('\t');
-    SerialDebug.print(buttonsL.right); SerialDebug.print('\t');
-    SerialDebug.print(buttonsL.ps); SerialDebug.print('\t');
-//    SerialDebug.print(sendTo32u4Data.xboxL3); SerialDebug.print('\t');
-//    SerialDebug.print(buttonsR.r1); SerialDebug.print('\t');
-//    SerialDebug.print(buttonsR.r2); SerialDebug.print('\t');
-//    SerialDebug.print(sendTo32u4Data.xboxR3); SerialDebug.print('\t');
-//    SerialDebug.print(buttons.a); SerialDebug.print('\t');
-//    SerialDebug.print(buttons.b); SerialDebug.print('\t');
-//    SerialDebug.print(buttons.x); SerialDebug.print('\t');
-//    SerialDebug.print(buttons.y); SerialDebug.print('\t');
-    
-//    SerialDebug.print(buttonsL.back); SerialDebug.print('\t');
-//    SerialDebug.print(enableDrive); SerialDebug.print('\t');
-//    SerialDebug.println(buttons.xbox); 
-    
+  #ifdef debugNavRemoteLeft
+    DEBUG_PRINT(F("32u4DomeY: ")); DEBUG_PRINT(sendTo32u4Data.leftStickY); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("32u4DomeX: ")); DEBUG_PRINT(sendTo32u4Data.leftStickX); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsL.leftStickY); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsL.leftStickX); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsL.l1); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsL.l2); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsL.l3); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsL.up); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsL.down); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsL.left); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsL.right); DEBUG_PRINT('\t');
+    DEBUG_PRINT(buttonsL.ps); DEBUG_PRINT('\t');
   #endif
 
   #ifdef debugESPNOW
-     SerialDebug.print(F("BodyPSI: ")); SerialDebug.print(sendPSI); SerialDebug.print("\t");
-     SerialDebug.print(F("BodyHP: ")); SerialDebug.print(sendHP); SerialDebug.print("\t"); 
-     SerialDebug.print(F("BodyBAT: ")); SerialDebug.print(sendBAT); SerialDebug.print("\t"); 
-     SerialDebug.print(F("BodyDIS: ")); SerialDebug.print(sendDIS); SerialDebug.print("\t");   
-     SerialDebug.print(F("DomePSI: ")); SerialDebug.print(incomingPSI); SerialDebug.print("\t"); 
-     SerialDebug.print(F("DomeBAT: ")); SerialDebug.print(incomingBAT); SerialDebug.println("\t"); 
-     
+     DEBUG_PRINT(F("BodyPSI: ")); DEBUG_PRINT(sendPSI); DEBUG_PRINT("\t");
+     DEBUG_PRINT(F("BodyHP: ")); DEBUG_PRINT(sendHP); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("BodyBAT: ")); DEBUG_PRINT(sendBAT); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("BodyDIS: ")); DEBUG_PRINT(sendDIS); DEBUG_PRINT("\t");   
+     DEBUG_PRINT(F("DomePSI: ")); DEBUG_PRINT(incomingPSI); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("DomeBAT: ")); DEBUG_PRINT(incomingBAT); DEBUG_PRINTLN("\t"); 
   #endif
 
   #ifdef debugPreferences
   
-     SerialDebug.print(F("Pitch: ")); SerialDebug.print(receiveIMUData.pitch); SerialDebug.print("\t");
-     SerialDebug.print(F("Roll: ")); SerialDebug.print(receiveIMUData.roll); SerialDebug.print("\t"); 
-     SerialDebug.print(F("pitchoffset: ")); SerialDebug.print(pitchOffset); SerialDebug.print("\t"); 
-     SerialDebug.print(F("rolloffset: ")); SerialDebug.print(rollOffset); SerialDebug.print("\t");   
-     SerialDebug.print(F("POT: ")); SerialDebug.print(S2S_pot); SerialDebug.print("\t"); 
-     SerialDebug.print(F("POToffset: ")); SerialDebug.print(potOffsetS2S); SerialDebug.println("\t"); 
+     DEBUG_PRINT(F("Pitch: ")); DEBUG_PRINT(receiveIMUData.pitch); DEBUG_PRINT("\t");
+     DEBUG_PRINT(F("Roll: ")); DEBUG_PRINT(receiveIMUData.roll); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("pitchoffset: ")); DEBUG_PRINT(pitchOffset); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("rolloffset: ")); DEBUG_PRINT(rollOffset); DEBUG_PRINT("\t");   
+     DEBUG_PRINT(F("POT: ")); DEBUG_PRINT(S2S_pot); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("POToffset: ")); DEBUG_PRINT(potOffsetS2S); DEBUG_PRINTLN("\t"); 
      
   #endif
 
   #ifdef debugEasyTransfer
   
-     SerialDebug.print(F("driveEnabled: ")); Serial.print(sendTo32u4Data.driveEnabled); Serial.print("\t"); 
-     SerialDebug.print(F("domeSpin: ")); Serial.print(sendTo32u4Data.domeSpin); Serial.print("\t"); 
-     SerialDebug.print(F("MoveL3: ")); Serial.print(sendTo32u4Data.moveL3); Serial.print("\t"); 
-//     SerialDebug.print(F("flywheel: ")); Serial.print(sendTo32u4Data.flywheel); Serial.print("\t"); 
-     SerialDebug.print(F("moveR3: ")); Serial.print(sendTo32u4Data.moveR3); Serial.print("\t"); 
-     SerialDebug.print(F("leftStickX: ")); Serial.print(sendTo32u4Data.leftStickX); Serial.print("\t"); 
-     SerialDebug.print(F("leftStickY: ")); Serial.print(sendTo32u4Data.leftStickY); Serial.print("\t"); 
-     SerialDebug.print(F("soundcmd: ")); Serial.print(sendTo32u4Data.soundcmd); Serial.print("\t"); 
-     SerialDebug.print(F("psiFlash: ")); Serial.print(sendTo32u4Data.psiFlash); Serial.print("\t"); 
-     SerialDebug.print(F("pitch: ")); Serial.print(sendTo32u4Data.pitch); Serial.print("\t"); 
-     SerialDebug.print(F("roll: ")); Serial.print(sendTo32u4Data.roll); SerialDebug.println('\t');
+     DEBUG_PRINT(F("driveEnabled: ")); DEBUG_PRINT(sendTo32u4Data.driveEnabled); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("domeSpin: ")); DEBUG_PRINT(sendTo32u4Data.domeSpin); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("MoveL3: ")); DEBUG_PRINT(sendTo32u4Data.moveL3); DEBUG_PRINT("\t"); 
+//     DEBUG_PRINT(F("flywheel: ")); DEBUG_PRINT(sendTo32u4Data.flywheel); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("moveR3: ")); DEBUG_PRINT(sendTo32u4Data.moveR3); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("leftStickX: ")); DEBUG_PRINT(sendTo32u4Data.leftStickX); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("leftStickY: ")); DEBUG_PRINT(sendTo32u4Data.leftStickY); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("soundcmd: ")); DEBUG_PRINT(sendTo32u4Data.soundcmd); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("psiFlash: ")); DEBUG_PRINT(sendTo32u4Data.psiFlash); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("pitch: ")); DEBUG_PRINT(sendTo32u4Data.pitch); DEBUG_PRINT("\t"); 
+     DEBUG_PRINT(F("roll: ")); DEBUG_PRINT(sendTo32u4Data.roll); DEBUG_PRINTLN('\t');
   #endif
 
   #ifdef debugIMU
-    SerialDebug.print(IMUconnected); SerialDebug.print('\t');
-    SerialDebug.print(F("pitch.: ")); SerialDebug.print(receiveIMUData.pitch); SerialDebug.print('\t');
-    SerialDebug.print(F("roll.: ")); SerialDebug.print(receiveIMUData.roll); SerialDebug.print('\t');
-    SerialDebug.print(F("Input2/Roll: ")); SerialDebug.print(Input2); SerialDebug.print('\t'); 
+    DEBUG_PRINT(IMUconnected); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("pitch.: ")); DEBUG_PRINT(receiveIMUData.pitch); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("roll.: ")); DEBUG_PRINT(receiveIMUData.roll); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("Input2/Roll: ")); DEBUG_PRINT(Input2); DEBUG_PRINTLN('\t'); 
   #endif
   
   #ifdef debugPOTS
     double S2SDebug_pot = analogRead(S2SPot_pin);
-    SerialDebug.print(F("Setpoint2: ")); SerialDebug.print(Setpoint2); SerialDebug.print('\t');
-    SerialDebug.print(F("S2S_pot: ")); SerialDebug.print(S2SDebug_pot); SerialDebug.print('\t');
-    SerialDebug.print(F("Setpoint1/Output2: ")); SerialDebug.print(Setpoint1); SerialDebug.print('\t');
-    SerialDebug.print(F("diff_S2S: ")); SerialDebug.print(diff_S2S); SerialDebug.print('\t');
-    SerialDebug.print(F("Input1: ")); SerialDebug.print(Input1); SerialDebug.print('\t');
-    SerialDebug.print(F("Input2: ")); SerialDebug.print(Input2); SerialDebug.println('\t');
+    DEBUG_PRINT(F("Setpoint2: ")); DEBUG_PRINT(Setpoint2); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("S2S_pot: ")); DEBUG_PRINT(S2SDebug_pot); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("Setpoint1/Output2: ")); DEBUG_PRINT(Setpoint1); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("diff_S2S: ")); DEBUG_PRINT(diff_S2S); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("Input1: ")); DEBUG_PRINT(Input1); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("Input2: ")); DEBUG_PRINT(Input2); DEBUG_PRINTLN('\t');
   #endif
 
   #ifdef debugS2S
     double S2SDebug_pot = analogRead(S2SPot_pin);
-    SerialDebug.print(F("Target: ")); SerialDebug.print(target_pos_S2S ); SerialDebug.print('\t'); 
-    SerialDebug.print(F("JOYX: ")); SerialDebug.print(buttonsR.rightStickX); SerialDebug.print('\t'); 
-    SerialDebug.print(F("current_pos_S2S: ")); SerialDebug.print(current_pos_S2S); SerialDebug.print('\t'); 
-    SerialDebug.print(F("diff_S2S: ")); SerialDebug.print(diff_S2S); SerialDebug.print('\t');
-    SerialDebug.print(F("Setpoint2: ")); SerialDebug.print(Setpoint2); SerialDebug.print('\t');
-    SerialDebug.print(F("Input1/Pot: ")); SerialDebug.print(Input1); SerialDebug.print('\t');
-    SerialDebug.print(F("Input2/Roll: ")); SerialDebug.print(Input2); SerialDebug.print('\t'); 
-    SerialDebug.print(F("Setpoint1/Output2: ")); SerialDebug.print(Setpoint1); SerialDebug.print('\t');
-    SerialDebug.print(F("PotRaw.: ")); SerialDebug.print(S2SDebug_pot); SerialDebug.print('\t');
-    SerialDebug.print(F("RollRaw.: ")); SerialDebug.print(receiveIMUData.roll); SerialDebug.print('\t');
-    SerialDebug.print(F("Output1_S2S_pwm: ")); SerialDebug.print(Output1_S2S_pwm); SerialDebug.print('\t');
-    SerialDebug.print(F("En: ")); SerialDebug.println(enableDrive); 
+    DEBUG_PRINT(F("Target: ")); DEBUG_PRINT(target_pos_S2S ); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("JOYX: ")); DEBUG_PRINT(buttonsR.rightStickX); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("current_pos_S2S: ")); DEBUG_PRINT(current_pos_S2S); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("diff_S2S: ")); DEBUG_PRINT(diff_S2S); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("Setpoint2: ")); DEBUG_PRINT(Setpoint2); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("Input1/Pot: ")); DEBUG_PRINT(Input1); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("Input2/Roll: ")); DEBUG_PRINT(Input2); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("Setpoint1/Output2: ")); DEBUG_PRINT(Setpoint1); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("PotRaw.: ")); DEBUG_PRINT(S2SDebug_pot); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("RollRaw.: ")); DEBUG_PRINT(receiveIMUData.roll); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("Output1_S2S_pwm: ")); DEBUG_PRINT(Output1_S2S_pwm); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("En: ")); DEBUG_PRINTLN(enableDrive); 
   #endif
 
 #ifdef debugS2SPot
 double S2SDebug_pot = analogRead(S2SPot_pin);
- SerialDebug.print("S2SPOT_INPUT1_PID:"); SerialDebug.print(Input1); SerialDebug.print('\t');
- SerialDebug.print("S2SPOT_PIN:"); SerialDebug.print(S2SPot_pin); SerialDebug.print('\t');
- SerialDebug.print("S2SPOT_PWM:"); SerialDebug.print(S2SDebug_pot); SerialDebug.println('\t');
+ DEBUG_PRINT("S2SPOT_INPUT1_PID:"); DEBUG_PRINT(Input1); DEBUG_PRINT('\t');
+ DEBUG_PRINT("S2SPOT_PWM:"); DEBUG_PRINT(S2SDebug_pot); DEBUG_PRINTLN('\t');
 #endif
 
 #ifdef debugFlywheel
 
     
-    SerialDebug.print(F("EnableFly: ")); SerialDebug.print(EnableFlywheel); SerialDebug.print('\t'); 
-    SerialDebug.print(F("flywheel: ")); SerialDebug.print(abs(flywheel)); SerialDebug.print('\t'); 
-    SerialDebug.print(F("flywheelRot: ")); SerialDebug.print(flywheelRotation); SerialDebug.print('\t'); 
-    SerialDebug.print(F("Joy: ")); SerialDebug.print(buttonsR.rightStickX); SerialDebug.print('\t'); 
-    SerialDebug.print(F("ControllerConn.: ")); SerialDebug.print(controllerConnected); SerialDebug.print('\t');
-    SerialDebug.print(F("En: ")); SerialDebug.println(enableDrive); 
+    DEBUG_PRINT(F("EnableFly: ")); DEBUG_PRINT(EnableFlywheel); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("flywheel: ")); DEBUG_PRINT(abs(flywheel)); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("flywheelRot: ")); DEBUG_PRINT(flywheelRotation); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("Joy: ")); DEBUG_PRINT(buttonsR.rightStickX); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("ControllerConn.: ")); DEBUG_PRINT(controllerConnected); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("En: ")); DEBUG_PRINTLN(enableDrive); 
       
 #endif
 
 #ifdef debugMainDrive
-
-    SerialDebug.print(F("Target: ")); SerialDebug.print(target_pos_drive); SerialDebug.print('\t'); 
-    SerialDebug.print(F("JOYX: ")); SerialDebug.print(buttonsR.rightStickY); SerialDebug.print('\t'); 
-    SerialDebug.print(F("current_pos: ")); SerialDebug.print(current_pos_drive); SerialDebug.print('\t'); 
-    SerialDebug.print(F("Setpoint3: ")); SerialDebug.print(Setpoint3); SerialDebug.print('\t');
-    SerialDebug.print(F("Input3/Pitch: ")); SerialDebug.print(Input3); SerialDebug.print('\t');
-    SerialDebug.print(F("+Pitchoffset: ")); SerialDebug.print(pitchOffset); SerialDebug.print('\t');
-    SerialDebug.print(F("Output3/Roll: ")); SerialDebug.print(Output3); SerialDebug.print('\t'); 
-    SerialDebug.print(F("Output_Drive_pwm: ")); SerialDebug.print(Output_Drive_pwm); SerialDebug.print('\t');
-    SerialDebug.print(F("Contr.: ")); SerialDebug.print(controllerConnected); SerialDebug.print('\t');
-    SerialDebug.print(F("En: ")); SerialDebug.println(enableDrive); 
-      
-#endif
-
-     
-     
-  
-  }
+    DEBUG_PRINT(F("Target: ")); DEBUG_PRINT(target_pos_drive); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("JoyY: ")); DEBUG_PRINT(buttonsR.rightStickY); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("current_pos: ")); DEBUG_PRINT(current_pos_drive); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("Setpoint3: ")); DEBUG_PRINT(Setpoint3); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("Input3/Pitch: ")); DEBUG_PRINT(Input3); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("+Pitchoffset: ")); DEBUG_PRINT(pitchOffset); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("Output3/Drive: ")); DEBUG_PRINT(Output3); DEBUG_PRINT('\t'); 
+    DEBUG_PRINT(F("Output_Drive_pwm: ")); DEBUG_PRINT(Output_Drive_pwm); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("Contr.: ")); DEBUG_PRINT(controllerConnected); DEBUG_PRINT('\t');
+    DEBUG_PRINT(F("En: ")); DEBUG_PRINTLN(enableDrive); 
+#endif 
+}
