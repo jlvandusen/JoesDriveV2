@@ -49,8 +49,8 @@
 /*  MP3 Trigger types supported
  *  Still to do: VS105 and Zio
 */
-// #define NoMP3 // Dont want to use MP3 services on this board
-#define MP3Sparkfun  // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
+#define NoMP3 // Dont want to use MP3 services on this board
+// #define MP3Sparkfun  // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
 // #define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
 // #define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
 // #define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
