@@ -34,7 +34,7 @@
 */
 
 // #define IMU_Bypass              //used for disabling and not using the IMU - good for testing just S2S without IMU
-#define enableESPNOW            // uncomment to use ESPNOW to communicate over wifi to the dome using ESP32
+// #define enableESPNOW            // uncomment to use ESPNOW to communicate over wifi to the dome using ESP32
 #define revS2S
 // #define revDrive
 // #define revGyro
@@ -146,7 +146,7 @@
 uint8_t broadcastAddress[] = {0x7C, 0x9E, 0xBD, 0xD7, 0x63, 0xC4}; // Body ESP32
 
 #ifdef MOVECONTROLLER
-PSController driveController(DRIVE_CONTROLLER_MAC); //define the driveController variable to be used against the Nav1 and Nav2 controllers.
+PSController driveController(DRIVE_CONTROLLER_MAC); //define the drive an dome Controller variable to be used against the Nav1 and Nav2 controllers.
 PSController domeController(DOME_CONTROLLER_MAC);
 #define driveDelay .75
 #endif
