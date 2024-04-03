@@ -34,7 +34,7 @@
 */
 
 // #define IMU_Bypass              //used for disabling and not using the IMU - good for testing just S2S without IMU
-// #define enableESPNOW            // uncomment to use ESPNOW to communicate over wifi to the dome using ESP32
+#define enableESPNOW            // uncomment to use ESPNOW to communicate over wifi to the dome using ESP32
 #define revS2S
 // #define revDrive
 // #define revGyro
@@ -344,7 +344,7 @@ void setup() {
   delay(5000); // Wait for Boot and for serial to become ready
   currentMillis = millis();
   Serial.begin(115200);
-  Serial1.begin(74880); //115200 74880
+  Serial1.begin(115200); //115200 74880
   Serial2.begin(SERIAL2_BAUD_RATE, SERIAL_8N1, SERIAL2_RX_PIN, SERIAL2_TX_PIN);
 //  Serial3.begin(SERIAL3_BAUD_RATE, SWSERIAL_8N1, SERIAL3_RX_PIN, SERIAL3_TX_PIN,false,256);
 
@@ -469,16 +469,13 @@ void loop() {
       #endif
   }
   receiveRemote();
-  if (millis() - lastLoopMillis >= 20){
-      lastLoopMillis = millis();
       S2S_Movement(); 
       drive_Movement(); 
       spinFlywheel();
-      #ifndef enableESPNOW
+      #ifdef enableESPNOW
         sendESPNOW();
       #endif
-      autoDisableMotors();
-  }
+      // autoDisableMotors();
   sendDataTo32u4();
   if(currentMillis - lastPrintMillis >= 70) {
     lastPrintMillis = currentMillis;
@@ -570,11 +567,11 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
 
 void sendESPNOW() {
   #ifdef enableESPNOW
-    if (receiveFrom32u4Data.sndplaying == 1) {
-      sendPSI = 1;
-    } else {
-      sendPSI = 0;
-    }
+    // if (receiveFrom32u4Data.sndplaying == 1) {
+    //   sendPSI = 1;
+    // } else {
+    //   sendPSI = 0;
+    // }
     outgoingESPNOW.psi = sendPSI;
     outgoingESPNOW.btn = sendHP;
     outgoingESPNOW.bat = sendBAT;

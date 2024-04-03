@@ -74,12 +74,15 @@ void debugRoutines(){
      DEBUG_PRINT(F("pitch: ")); DEBUG_PRINT(sendTo32u4Data.pitch); DEBUG_PRINT("\t"); 
      DEBUG_PRINT(F("roll: ")); DEBUG_PRINT(sendTo32u4Data.roll); DEBUG_PRINTLN('\t');
   #endif
-
   #ifdef debugIMU
-    DEBUG_PRINT(IMUconnected); DEBUG_PRINT('\t');
-    DEBUG_PRINT(F("pitch.: ")); DEBUG_PRINT(receiveIMUData.pitch); DEBUG_PRINT('\t');
-    DEBUG_PRINT(F("roll.: ")); DEBUG_PRINT(receiveIMUData.roll); DEBUG_PRINT('\t');
-    DEBUG_PRINT(F("Input2/Roll: ")); DEBUG_PRINT(Input2); DEBUG_PRINTLN('\t'); 
+    DEBUG_PRINT("IMU CONNECTED: ");
+    DEBUG_PRINT(IMUconnected);
+    DEBUG_PRINT(" Input2/Roll: "); 
+    DEBUG_PRINT(Input2);
+    DEBUG_PRINT(" IMU ROLL: ");
+    DEBUG_PRINT(sendTo32u4Data.roll);
+    DEBUG_PRINT(" IMU PITCH: ");
+    DEBUG_PRINTLN(sendTo32u4Data.pitch);
   #endif
   
   #ifdef debugPOTS
