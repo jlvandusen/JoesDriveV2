@@ -34,7 +34,7 @@
 */
 
 // #define IMU_Bypass              //used for disabling and not using the IMU - good for testing just S2S without IMU
-#define enableESPNOW            // uncomment to use ESPNOW to communicate over wifi to the dome using ESP32
+// #define enableESPNOW            // uncomment to use ESPNOW to communicate over wifi to the dome using ESP32
 #define revS2S
 // #define revDrive
 // #define revGyro
@@ -197,10 +197,9 @@ struct SEND_DATA_STRUCTURE_32u4{
 #ifdef MOVECONTROLLER
 struct SEND_DATA_STRUCTURE_32u4{  
   bool driveEnabled;
-  // bool reverseDrive; // DriveDirection equivilent
   int8_t domeSpin;
-  bool moveL3; // xbox L3 equivilent
-  bool moveR3; // xboxR3 equivilent
+  bool moveL3; // reverseDrive
+  bool moveR3; // domeServoMode
   int8_t leftStickX;
   int8_t leftStickY;
   int8_t soundcmd;
@@ -216,7 +215,7 @@ struct SEND_DATA_STRUCTURE_32u4{
 
 struct RECEIVE_DATA_STRUCTURE_32u4{ // - SLAVE_DATA
   int16_t tiltAngle; 
-  int8_t sndplaying;
+  bool sndplaying;
 } receiveFrom32u4Data;
 
 
@@ -281,7 +280,7 @@ struct_message incomingESPNOW;
 /*
  * Create Serial 2 to send to the 32u4 / ESP32-S2 (qwiic)
 */
-#define SERIAL2_BAUD_RATE 74880  // 74880 57600
+#define SERIAL2_BAUD_RATE 74880  // 74880 57600 115200
 #define SERIAL2_RX_PIN 13
 #define SERIAL2_TX_PIN 12
 
@@ -469,13 +468,13 @@ void loop() {
       #endif
   }
   receiveRemote();
-      S2S_Movement(); 
-      drive_Movement(); 
-      spinFlywheel();
-      #ifdef enableESPNOW
-        sendESPNOW();
-      #endif
-      autoDisableMotors();
+  S2S_Movement(); 
+  drive_Movement(); 
+  spinFlywheel();
+  #ifdef enableESPNOW
+    sendESPNOW();
+  #endif
+  autoDisableMotors();
   sendDataTo32u4();
   if(currentMillis - lastPrintMillis >= 70) {
     lastPrintMillis = currentMillis;
@@ -534,16 +533,17 @@ void sendDataTo32u4(){
 /* 
  *  ESPNOW Callback when data is sent
 */
+#ifdef enableESPNOW
 void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
   #ifdef debugESPNOWSend
-  Serial.print("\r\nLast Packet Send Status:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-  if (status ==0){
-    success = "Delivery Success :)";
-  }
-  else{
-    success = "Delivery Fail :(";
-  }
+    Serial.print("\r\nLast Packet Send Status:\t");
+    Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
+    if (status ==0){
+      success = "Delivery Success :)";
+    }
+    else{
+      success = "Delivery Fail :(";
+    }
   #endif
 }
 
@@ -553,8 +553,8 @@ void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
 void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
   memcpy(&incomingESPNOW, incomingData, sizeof(incomingESPNOW));
   #ifdef debugESPNOWReceive
-  Serial.print("Bytes received: ");
-  Serial.println(len);
+    Serial.print("Bytes received: ");
+    Serial.println(len);
   #endif
   incomingPSI = incomingESPNOW.psi;
   incomingBTN = incomingESPNOW.btn;
@@ -566,7 +566,6 @@ void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
 */
 
 void sendESPNOW() {
-  #ifdef enableESPNOW
     // if (receiveFrom32u4Data.sndplaying == 1) {
     //   sendPSI = 1;
     // } else {
@@ -578,7 +577,6 @@ void sendESPNOW() {
     outgoingESPNOW.dis = sendDIS;
     // Send message via ESP-NOW
     esp_err_t result = esp_now_send(broadcastAddress, (uint8_t *) &outgoingESPNOW, sizeof(outgoingESPNOW));
-  #endif
   #ifdef debugESPNOWSend
     if (result == ESP_OK) {
       Serial.println("Sent with success");
@@ -587,7 +585,7 @@ void sendESPNOW() {
     }
   #endif
 }
-
+#endif
 //void psiTime(){
 //  if (receiveFromESP32Data.psiFlash) {
 //    psiValue = map(((analogRead(psiSensor_pin_L) + analogRead(psiSensor_pin_R)) / 2),0,1000,0,100);

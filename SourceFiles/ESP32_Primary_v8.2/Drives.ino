@@ -87,36 +87,7 @@ void S2S_Movement(){
   }
 }
 
-//  void S2S_Movement(){
-//   Input2 = receiveIMUData.roll *-1;
-//   if(reverseDrive == false){
-//     buttonsR.rightStickX *= -1; 
-//   }
-//     Setpoint_S2S_Servo = buttonsR.rightStickX; 
-  
-//    PID2_S2S.Compute();
- 
-
-//   Input_S2S_Stabilization = (map(analogRead(S2SPot_pin),0,4095,0,270)+S2S_offset)*-1;
-//   //Input_S2S_Stabilization = (map(analogRead(S2SPot_pin),0,1023,0,270)-160)*-1;
-
-//   Setpoint_S2S_Stabilization = Output_S2S_Servo;
-//   PID1_S2S.Compute(); 
-
-//   if(Output_S2S_Stabilization > 5 && controllerConnected && enableDrive){
-//     analogWrite(S2S_pin_1, map(abs(Output_S2S_Stabilization),0,255,0,220));
-//     analogWrite(S2S_pin_2, 0); 
-//   }else if(Output_S2S_Stabilization < -5 && controllerConnected && enableDrive){
-//     analogWrite(S2S_pin_1,  0);
-//     analogWrite(S2S_pin_2,  map(Output_S2S_Stabilization,-255,0,220,0));
-    
-//   }else{
-//     analogWrite(S2S_pin_2,  0);
-//     analogWrite(S2S_pin_1,  0);
-//   }
-// }
-
-void drive_Movement(){
+void drive_Movement() {
 //  Using the DFRobot Motor Driver 0601 we need 3 pins
 //  VCC and GND to power the driver logic
 //  First pin is PWM for speed control 0 - 255
@@ -129,29 +100,27 @@ void drive_Movement(){
     buttonsR.rightStickY *= -1;
   }
     
-    if(Setpoint_Drive_In > buttonsR.rightStickY){
-      Setpoint_Drive_In-=driveDelay; 
-    }else if(Setpoint_Drive_In < buttonsR.rightStickY){
-      Setpoint_Drive_In+=driveDelay; 
-    }
+  if(Setpoint_Drive_In > buttonsR.rightStickY) {
+    Setpoint_Drive_In-=driveDelay; 
+  } else if(Setpoint_Drive_In < buttonsR.rightStickY) {
+    Setpoint_Drive_In+=driveDelay; 
+  }
 
-    Setpoint3 = map(Setpoint_Drive_In,-127,128,-40,40); 
+  Setpoint3 = map(Setpoint_Drive_In,-127,128,-40,40); 
   
-  //Setpoint_Drive = buttons.rightStickY * -1; 
-  //myPID_Drive.Compute(); 
   PID_Drive.Compute();
 
-    if(Output3 > 10 && enableDrive){
+  if(Output3 > 10 && enableDrive) {
 	  digitalWrite(Drive_pin_1, LOW);
     digitalWrite(Drive_pin_2, HIGH);
 	  analogWrite(Drive_pwm, map(abs(Output3),0,255,0,255));
     // analogWrite(Drive_pwm, Output3);
-  }else if(Output3 < -10 && enableDrive){
+  } else if(Output3 < -10 && enableDrive) {
 	  digitalWrite(Drive_pin_1, HIGH);
     digitalWrite(Drive_pin_2, LOW);
 	  // analogWrite(Drive_pwm, Output3);
     analogWrite(Drive_pwm, map(abs(Output3),0,255,0,255));
-  }else{
+  } else {
 	  digitalWrite(Drive_pin_1, LOW);
     digitalWrite(Drive_pin_2, LOW);
   }

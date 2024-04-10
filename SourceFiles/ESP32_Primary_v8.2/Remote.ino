@@ -61,7 +61,7 @@ void receiveRemote() {
     if(buttonsR.l1){ // Check if the drive Controller L1 Button is held (Flywheel disengaged, dome engaged)
       flywheel = 0;
       sendTo32u4Data.domeSpin = buttonsR.rightStickX;
-      // Output_domeSpin_pwm = map(buttonsR.rightStickX,-127,127,-255,255);
+      buttonsR.rightStickY = 0;
     } else {
       sendTo32u4Data.domeSpin = 0;
       Output_domeSpin_pwm = 0;
@@ -83,28 +83,28 @@ void receiveRemote() {
   // int buttonRight = 0;  // Set to 1 or 0 based on your logic
   // int buttonPS = 1;     // Set to 1 or 0 based on your logic
 
-  switch ( buttonsR.up) {   // Example switch...case statement
-    case 1:
-        sendTo32u4Data.soundcmd = 1;  // Play surprised!
-        // outgoingESPNOW.psi = sendPSI;
-        // outgoingESPNOW.btn = sendHP;
-        // outgoingESPNOW.bat = sendBAT;
-        // outgoingESPNOW.dis = sendDIS;
-        sendPSI = 1;
-        // Do something when buttonCircle is 1
-        // For example, turn on an LED or perform an action
-        break;
-    case 0:
-        // Do something when buttonCircle is 0
-        // For example, turn off an LED or perform a different action
-        sendPSI = 0;
-        break;
-    // Add similar cases for other buttons (cross, up, down, left, right, ps)
-    // ...
-    default:
-        // If none of the cases match, execute default code (optional)
-        break;
-  }
+  // switch ( buttonsR.up) {   // Example switch...case statement
+  //   case 1:
+  //       sendTo32u4Data.soundcmd = 1;  // Play surprised!
+  //       // outgoingESPNOW.psi = sendPSI;
+  //       // outgoingESPNOW.btn = sendHP;
+  //       // outgoingESPNOW.bat = sendBAT;
+  //       // outgoingESPNOW.dis = sendDIS;
+  //       sendPSI = 1;
+  //       // Do something when buttonCircle is 1
+  //       // For example, turn on an LED or perform an action
+  //       break;
+  //   case 0:
+  //       // Do something when buttonCircle is 0
+  //       // For example, turn off an LED or perform a different action
+  //       sendPSI = 0;
+  //       break;
+  //   // Add similar cases for other buttons (cross, up, down, left, right, ps)
+  //   // ...
+  //   default:
+  //       // If none of the cases match, execute default code (optional)
+  //       break;
+  // }
 #endif
   if (buttonsR.up && buttonsL.up) { 
         setOffsetsAndSaveToEEPROM(); // If both Ups are pushed - call Store Configuration in Preferences (EEPROM)
