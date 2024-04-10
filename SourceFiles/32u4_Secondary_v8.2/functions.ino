@@ -40,6 +40,11 @@ void SendRecieveData() {
       domeServoPWMFiltered = adcFilterdomeSpin.filter(domeServoPWM);
       soundcmd = adcFiltersoundcmd.filter(soundcmd);
       sndplaying = sendToESP32Data.sndplaying;
+      
+      enableDrive = enableDriveFiltered;
+      domeServoMode = domeServoModeFiltered;
+      reverseDrive = reverseDriveFiltered;
+      domeServoPWM = domeServoPWMFiltered;
     #endif
 
     sendESP32.sendData();

@@ -1,5 +1,5 @@
 /*
- * Joe's Drive  - V2.3 03/2024
+ * Joe's Drive  - V8.2 04/2024
  * Secondary 32u4 Dome movement and PSI Body lights v8.2 PCB Board
  * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
  * Utilizes Adafruit Feather 32u4 Basic Proto: 
@@ -56,7 +56,7 @@
 // #define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
 
 // #define UseHallMonitor  // Allow use of hall monitor installed to set forward direction of the dome otherwise set via Pref save on Controllers
-#define EnableFilters // Providing 
+#define EnableFilters // Providing filtering of pins to prevent jerking through the serial communications between ESP32 and 32u4
 
 /* Debug Printlines */
 #define SerialDebug Serial
@@ -337,4 +337,3 @@ void loop() {
   Timechecks();
   mp3play();
 }
-
