@@ -11,25 +11,12 @@ void Timechecks() {
   }
 }
 
-// void SendRecieveData() {
-//   if (recESP32.receiveData()) {
-//     receiveMillis = currentMillis;
-//     enableDrive = receiveFromESP32Data.driveEnabled;
-//     domeServoMode = receiveFromESP32Data.moveR3;
-//     reverseDrive = receiveFromESP32Data.moveL3;
-//     domeServoPWM = map(receiveFromESP32Data.domeSpin,-127,127,-255,255);
-//     soundcmd = receiveFromESP32Data.soundcmd;
-//     sendESP32.sendData();
-
-//   }
-// }
-
 void SendRecieveData() {
   if (recESP32.receiveData()) {
     receiveMillis = currentMillis;
     enableDrive = receiveFromESP32Data.driveEnabled;
-    domeServoMode = receiveFromESP32Data.moveR3;
-    reverseDrive = receiveFromESP32Data.moveL3;
+    reverseDrive = receiveFromESP32Data.moveR3;
+    domeServoMode = receiveFromESP32Data.moveL3;
     domeServoPWM = map(receiveFromESP32Data.domeSpin,-127,127,-255,255);
     soundcmd = receiveFromESP32Data.soundcmd;
     sndplaying = sendToESP32Data.sndplaying;
@@ -52,12 +39,7 @@ void SendRecieveData() {
   }
 }
 
-boolean encoder_direction() {
-  newPosition = myEnc.read();
-  if (newPosition != oldPosition ) {
-    oldPosition = newPosition;
-  }
-}
+
 
     
 //void psiTime(){

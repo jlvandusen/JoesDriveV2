@@ -16,12 +16,21 @@ void debugRoutines(){
   
   #ifdef debugHALLFull
   
-    SerialDebug.print(F("hallEffectSensor_Pin: ")); SerialDebug.print(hallEffectSensor_Pin); SerialDebug.print('\t');
+    SerialDebug.print(F("hallEffectSensor_Pin: ")); SerialDebug.print(digitalRead(hallEffectSensor_Pin)); SerialDebug.print('\t');
     SerialDebug.print(F("domeServoMode: ")); SerialDebug.print(domeServoMode); SerialDebug.print('\t');
     SerialDebug.print(F("domeSpin: ")); SerialDebug.print(receiveFromESP32Data.domeSpin); SerialDebug.print('\t');
+    // SerialDebug.print(F("domeSpinServoPid: ")); SerialDebug.print(Setpoint_domeSpinServoPid); SerialDebug.print('\t');
+    SerialDebug.print(F("encPos: ")); SerialDebug.print(encPos); SerialDebug.print('\t');
+    // SerialDebug.print(F("Input: ")); SerialDebug.print(Input_domeSpinServoPid); SerialDebug.print('\t');
+    // SerialDebug.print(F("Output: ")); SerialDebug.print(Output_domeSpinServoPid); SerialDebug.print('\t');
+    SerialDebug.print(F("newPos: ")); SerialDebug.print(newPosition); SerialDebug.print('\t');
+    SerialDebug.print(F("oldPos: ")); SerialDebug.print(oldPosition); SerialDebug.print('\t');
     SerialDebug.print(F("leftStickX: ")); SerialDebug.print(receiveFromESP32Data.leftStickX); SerialDebug.print('\t');
-    SerialDebug.print(F("R3: ")); SerialDebug.print(receiveFromESP32Data.moveR3); SerialDebug.print('\t');
+    SerialDebug.print(F("domeCenterSet: ")); SerialDebug.print(domeCenterSet); SerialDebug.print('\t');
+    SerialDebug.print(F("domeCenter: ")); SerialDebug.print(domeCenter); SerialDebug.print('\t');
     SerialDebug.print(F("enableDrive: ")); Serial.print(enableDrive); SerialDebug.println('\t');
+
+    
       
   #endif
   

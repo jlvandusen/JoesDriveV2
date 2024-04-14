@@ -34,7 +34,7 @@
 // #define debugServos
 // #define debugDOME
 // #define debugEasyTransfer
-// #define debugHALLFull
+#define debugHALLFull
 // #define debugHALL
 // #define debugENC
 // #define debugSounds
@@ -55,8 +55,8 @@
 // #define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
 // #define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
 
-// #define UseHallMonitor  // Allow use of hall monitor installed to set forward direction of the dome otherwise set via Pref save on Controllers
-#define EnableFilters // Providing filtering of pins to prevent jerking through the serial communications between ESP32 and 32u4
+#define UseHallMonitor  // Allow use of hall monitor installed to set forward direction of the dome otherwise set via Pref save on Controllers
+// #define EnableFilters // Providing filtering of pins to prevent jerking through the serial communications between ESP32 and 32u4
 
 /* Debug Printlines */
 #define SerialDebug Serial
@@ -177,7 +177,7 @@ float R1 = 30000.0;  //30k
 float R2 = 7500.0;   //7.5k5 or 7k5
 float pitch, roll;
 
-bool domeCenterSet = false, domeServoMode = false, r3Flag = false, psiFlash = false, xboxR3Was = false, moveR3Was = false, moveL3Was = false, enableDrive = false, reverseDrive = false;
+bool domeCenter = false, domeCenterSet = false, domeServoMode = false, r3Flag = false, psiFlash = false, xboxR3Was = false, moveR3Was = false, moveL3Was = false, enableDrive = false, reverseDrive = false;
 bool domeServoModeFiltered = false,enableDriveFiltered = false, reverseDriveFiltered = false;
 
 unsigned long currentMillis, receiveMillis, lastPrintMillis, lastVSMillis, lastServoUpdateMillis;
@@ -319,15 +319,15 @@ void setup() {
 void loop() {
   Timechecks();
   SendRecieveData();
+  encoder();
   if (enableDrive == 1) {
-    encoder();
     Servos();
     spinStuff();
-    if(!domeCenterSet){
+    if(domeCenterSet == false){
       setDomeCenter(); 
-    }
+     }
   }
-
   Timechecks();
   mp3play();
+
 }
