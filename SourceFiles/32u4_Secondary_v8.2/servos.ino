@@ -59,18 +59,22 @@ void Servos() {
     }
     
     if(y_Axis < 0) { //Scales the Y values from -100/100 to 40deg toward the 'back' and 35deg toward the 'front'
-      leftStickY = map(y_Axis,-100,0,-domeTiltYAxis_MaxAngle,0);
+      // leftStickY = map(y_Axis,-100,0,-domeTiltYAxis_MaxAngle,0);
+      leftStickY = map(y_Axis,-127,127,-domeTiltYAxis_MaxAngle,0);
     } else if(y_Axis > 0) {
-      leftStickY = map(y_Axis,0,100,0,domeTiltYAxis_MaxAngle);
+      // leftStickY = map(y_Axis,0,100,0,domeTiltYAxis_MaxAngle);
+      leftStickY = map(y_Axis,-127,127,0,domeTiltYAxis_MaxAngle);
     } else {
       leftStickY = 0;
     }
 
 
     if(x_Axis < 0){ //Scales the X values from -100/100 to 29def left/right
-      leftStickX  = map(x_Axis,-100,0,-domeTiltXAxis_MaxAngle,0);
+      // leftStickX  = map(x_Axis,-100,0,-domeTiltXAxis_MaxAngle,0);
+      leftStickX  = map(x_Axis,-127,127,-domeTiltXAxis_MaxAngle,0);
     }else if(x_Axis > 0){
-      leftStickX  = map(x_Axis,0,100,0,domeTiltXAxis_MaxAngle);
+      // leftStickX  = map(x_Axis,0,100,0,domeTiltXAxis_MaxAngle);
+      leftStickX  = map(x_Axis,-127,127,0,domeTiltXAxis_MaxAngle);
     }else{
       leftStickX  = 0;
     }

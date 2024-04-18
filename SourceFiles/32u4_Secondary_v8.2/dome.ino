@@ -1,11 +1,6 @@
 void encoder() {
   encPos = myEnc.read(); 
-//  #ifdef EnableFilters
-//    enableDrive = enableDriveFiltered;
-//    domeServoMode = domeServoModeFiltered;
-//    reverseDrive = reverseDriveFiltered;
-//  #endif
-  
+
   if (domeServoMode && !moveR3Was) {
     moveR3Was = true;
     myEnc.write(encPos - 1497/2); //myEnc.write(encPos - 1497/2); 1680
@@ -35,12 +30,6 @@ void encoder() {
  *   Turn the dome spin clockwise till it finds the hallsensor then set to domeCenterSet true
  */
 void setDomeCenter() {
-//  #ifdef EnableFilters
-//    enableDrive = enableDriveFiltered;
-//    domeServoMode = domeServoModeFiltered;
-//    reverseDrive = reverseDriveFiltered;
-//  #endif
-  
   if (domeServoMode) {
     #ifdef UseHallMonitor
       if(digitalRead(hallEffectSensor_Pin) == 0){
