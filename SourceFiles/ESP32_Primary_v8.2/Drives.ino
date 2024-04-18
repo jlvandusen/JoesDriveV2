@@ -5,9 +5,9 @@ void S2S_Movement(){
 //  Second and Third Pins are logic, LOW, HIGH = forward, HIGH, LOW = Backwards, LOW, LOW = stop
 //  Input1 = Potentiometer, Input2 = IMU
   if (reverseDrive) {
-    target_pos_S2S = map(buttonsR.rightStickX, -127,127,40,-40);  //Read in the Move Controller X Axis of Right Stick and force it from 127 extremes to 40
+    target_pos_S2S = map(buttonsR.rightStickX, -127,127,maxS2STilt,-maxS2STilt);  //Read in the Move Controller X Axis of Right Stick and force it from 127 extremes to 40
   } else {
-      target_pos_S2S = map(buttonsR.rightStickX, -127,127,-40,40);  //Read in the Move Controller X Axis of Right Stick and force it from 127 extremes to 40
+      target_pos_S2S = map(buttonsR.rightStickX, -127,127,-maxS2STilt,maxS2STilt);  //Read in the Move Controller X Axis of Right Stick and force it from 127 extremes to 40
   }
   
   
@@ -26,58 +26,63 @@ void S2S_Movement(){
   if (reverseDrive) {
     Input2 = ((receiveIMUData.roll * -1) + rollOffset);   // ****Add Offsets to the IMU readings (setting Zero)
   } else {
-      Input2 = (receiveIMUData.roll + rollOffset);   // ****Add Offsets to the IMU readings (setting Zero)
+      Input2 = ((receiveIMUData.roll) + rollOffset);   // ****Add Offsets to the IMU readings (setting Zero)
   }
 
   
-  Setpoint2 = constrain(Setpoint2, -45,45);  // Allow the S2S to only move 45 each direction
+  Setpoint2 = constrain(Setpoint2, -maxS2STilt,maxS2STilt);  // Allow the S2S to only move 45 each direction
   
   PID2_S2S.Compute(); // Apply PID values to Joystick values
 
   S2S_pot = analogRead(S2SPot_pin);   // read S2S pot
-  Setpoint1 = Output2;
+  // Setpoint1 = Output2;
+  Setpoint1 = map(constrain(Output2, -maxS2STilt,maxS2STilt), -maxS2STilt,maxS2STilt, maxS2STilt,-maxS2STilt);
+
   #ifndef revS2S
-  S2S_pot = map(S2S_pot, 0, 4095, 255,-255);
+  // NOTE: Depending upon resolution of POT, it may be 1024 or 4095
+  S2S_pot = map(S2S_pot, 0, 4095, 135,-135); // 255
   #else
-  S2S_pot = map(S2S_pot, 0, 4095, -255,255);
+  S2S_pot = map(S2S_pot, 0, 4095, -135,135); // 255
   #endif
 
   Input1  = S2S_pot + potOffsetS2S;  // Take in the value from Potentiometer with offests (setting Zero)
-  Input1 = constrain(Input1,-45,45);  // force Input1 to be only -45 to 45 (90degrees)
-  Setpoint1 = constrain(Setpoint1, -45,45); // take in joystick values defined by the output from the Potentiometer
-  Setpoint1 = map(Setpoint1,45,-45,-45,45);
+  // Input1 = constrain(Input1,-45,45);  // force Input1 to be only -45 to 45 (90degrees)
+  // Setpoint1 = constrain(Setpoint1, -45,45); // take in joystick values defined by the output from the Potentiometer
+  // Setpoint1 = map(Setpoint1,45,-45,-45,45);
   
   PID1_S2S.Compute();
-  if ((abs(Input1) < S2S_potDeadzone ) || (abs(Input1) > S2S_potDeadzone)) {
-    if (Output1 < 0) // decide which way to turn the wheels based on deadSpot variable
-    {
-      Output1_S2S_pwm = abs(Output1);
-      #ifndef revS2S
-      digitalWrite(S2S_pin_1, LOW);
-      digitalWrite(S2S_pin_2, HIGH); // S2S Left
-      #else
-      digitalWrite(S2S_pin_1, HIGH);
-      digitalWrite(S2S_pin_2, LOW); // S2S Right
-      #endif
-    }
-    else if (Output1 >= 0) // decide which way to turn the wheels based on deadSpot variable
-    { 
-      Output1_S2S_pwm = abs(Output1);
-      #ifndef revS2S
-      digitalWrite(S2S_pin_1, HIGH);
-      digitalWrite(S2S_pin_2, LOW); // S2S Right
-      #else
-      digitalWrite(S2S_pin_1, LOW);
-      digitalWrite(S2S_pin_2, HIGH); // S2S Left
-      #endif
-    } 
-    else
-    {
-      digitalWrite(S2S_pin_1, LOW);
-      digitalWrite(S2S_pin_2, LOW); // S2S Stopped (brake)
-    }
+  // if ((abs(Input1) < S2S_potDeadzone ) || (abs(Input1) > S2S_potDeadzone)) {
+    // if (Output1 < 0) // decide which way to turn the wheels based on deadSpot variable
+  if ((Output1 <= -1) && (Input1 > -maxS2STilt)) // decide which way to turn the wheels based on deadSpot variable
+  {
+    Output1_S2S_pwm = abs(Output1);
+    #ifndef revS2S
+    digitalWrite(S2S_pin_1, LOW);
+    digitalWrite(S2S_pin_2, HIGH); // S2S Left
+    #else
+    digitalWrite(S2S_pin_1, HIGH);
+    digitalWrite(S2S_pin_2, LOW); // S2S Right
+    #endif
   }
-  if (controllerConnected && enableDrive && !buttonsL.l1 && !buttonsR.l1) { // Check to ensure that L1 is not pressed on either Dome or Drive Controllers
+  // else if (Output1 >= 0) // decide which way to turn the wheels based on deadSpot variable
+  else if ((Output1 >= 1) && (Input1 < maxS2STilt)) // decide which way to turn the wheels based on deadSpot variable
+  { 
+    Output1_S2S_pwm = abs(Output1);
+    #ifndef revS2S
+    digitalWrite(S2S_pin_1, HIGH);
+    digitalWrite(S2S_pin_2, LOW); // S2S Right
+    #else
+    digitalWrite(S2S_pin_1, LOW);
+    digitalWrite(S2S_pin_2, HIGH); // S2S Left
+    #endif
+  } 
+  else
+  {
+    digitalWrite(S2S_pin_1, LOW);
+    digitalWrite(S2S_pin_2, LOW); // S2S Stopped (brake)
+  }
+  if (controllerConnected && enableDrive && !buttonsL.l1 && !buttonsR.l1) // Check to ensure that L1 is not pressed on either Dome or Drive Controllers
+  { 
     analogWrite(S2S_pwm, Output1_S2S_pwm);
   }
   else {

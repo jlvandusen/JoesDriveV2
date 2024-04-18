@@ -35,11 +35,13 @@
 
 // #define IMU_Bypass              //used for disabling and not using the IMU - good for testing just S2S without IMU
 // #define enableESPNOW            // uncomment to use ESPNOW to communicate over wifi to the dome using ESP32
-#define revS2S
+#define revS2S                  // uncomment to reverse the POT and S2S variables essentially reversing the current position tracking
 // #define revDrive
 // #define revGyro
 
 #define driveDelay .75
+#define maxS2STilt 30           // controls how far the S2S control using a joystick will it tilt... currently 25 should be max.
+#define S2SEase 2.5 
 
 /*
  * Debug Configurations
@@ -301,7 +303,7 @@ unsigned long autoDisableMotorsMillis, autoDisableDoubleCheckMillis;
 int current_pos_drive;  // variables for smoothing main drive
 int target_pos_drive;
 
-float Drive_IMUDeadzone = 1;   // target fluctuating between for IMU
+float Drive_IMUDeadzone = 2;   // target fluctuating between for IMU
 float S2S_potDeadzone = 5; // 3
 
 int diff_drive; // difference of position  (diff_drive = target_pos_drive - current_pos_drive;  // Work out the required travel.)
@@ -320,9 +322,9 @@ double flywheel;
 double flywheelEase;
 // double Setpoint_Drive, Input_Drive, Output_Drive, Setpoint_Drive_In;
 
-double Pk1 = 14;  //13
+double Pk1 = 14;  //13 14
 double Ik1 = 0;   //0
-double Dk1 = 0.0;   //0.1
+double Dk1 = 0.1;   //0.1
 double Setpoint1, Input1, Output1, Output1_S2S_pwm;    // PID variables - S2S Joystick control
 PID PID1_S2S(&Input1, &Output1, &Setpoint1, Pk1, Ik1 , Dk1, DIRECT);    // PID Setup - S2S Drive
 
@@ -474,7 +476,7 @@ void loop() {
   #ifdef enableESPNOW
     sendESPNOW();
   #endif
-  autoDisableMotors();
+  // autoDisableMotors();
   sendDataTo32u4();
   if(currentMillis - lastPrintMillis >= 70) {
     lastPrintMillis = currentMillis;
