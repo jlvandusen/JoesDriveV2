@@ -1,5 +1,5 @@
 /*
- * Joe's Drive  - V2 4/2024
+ * Joe's Drive  - V8.2 5/2024
  * Primary CPU uses ESP32 HUZZAH32
  * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
  * You will need ESP32 Hardware: 
@@ -7,7 +7,7 @@
  * ESp32 Board Libraries: https://learn.adafruit.com/adafruit-huzzah32-esp32-feather/pinouts?view=all#using-with-arduino-ide
  * 
  * Utilizes ESP32NOW technology over WiFi to talk between Dome and Body - need to capture the Wifi MAC during bootup.
- * On Line 117 - replace this with the mac of dome uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+ * On Line 148 - replace this with the mac of dome uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
  * Modified ESP32 BT Host Library https://github.com/reeltwo/PSController
  * 
  * Libraries Required
@@ -34,7 +34,7 @@
 */
 
 // #define IMU_Bypass              //used for disabling and not using the IMU - good for testing just S2S without IMU
-// #define enableESPNOW            // uncomment to use ESPNOW to communicate over wifi to the dome using ESP32
+#define enableESPNOW            // uncomment to use ESPNOW to communicate over wifi to the dome using ESP32
 #define revS2S                  // uncomment to reverse the POT and S2S variables essentially reversing the current position tracking
 // #define revDrive
 // #define revGyro
@@ -145,7 +145,8 @@
  * As per the following walkthrough https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
  * broadcastAddress REPLACE WITH THE MAC Address of your receiver - the other ESP32 in the body of BB8 7C:9E:BD:D7:63:C4
 */
-uint8_t broadcastAddress[] = {0x7C, 0x9E, 0xBD, 0xD7, 0x63, 0xC4}; // Body ESP32
+uint8_t broadcastAddress[] = {0x7C, 0x9E, 0xBD, 0xD7, 0x63, 0xC4}; // DOME ESP32
+// uint8_t broadcastAddress[] = {0x7C, 0x9E, 0xBD, 0xD7, 0x63, 0xC4};
 
 #ifdef MOVECONTROLLER
 PSController driveController(DRIVE_CONTROLLER_MAC); //define the drive an dome Controller variable to be used against the Nav1 and Nav2 controllers.
@@ -454,10 +455,11 @@ void setup() {
   rollOffset = preferences.getFloat("rollOffset", 0);
   potOffsetS2S = preferences.getInt("potOffsetS2S", 0);
 
-
-  if (abs(rollOffset) + abs(pitchOffset) + abs(potOffsetS2S) == 0 ){ // If the offsets are empty, soft set them dont store them until asked.
-    setOffsetsONLY();
-  }
+// commented the below out because when its turned off mid S2S tilt or while tilting forward and turned back on
+// it will save those settings while booting up... NOT GOOD
+  // if (abs(rollOffset) + abs(pitchOffset) + abs(potOffsetS2S) == 0 ){ // If the offsets are empty, soft set them dont store them until asked.
+  //   setOffsetsONLY();
+  // }
 }
 
 

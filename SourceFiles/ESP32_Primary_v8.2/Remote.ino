@@ -109,10 +109,12 @@ void receiveRemote() {
   if (buttonsR.up && buttonsL.up) { 
         setOffsetsAndSaveToEEPROM(); // If both Ups are pushed - call Store Configuration in Preferences (EEPROM)
         sendTo32u4Data.soundcmd = 6;  // Play surprised
+        sendPSI = 6; // send sound command to ESPNOW DOME
         DEBUG_PRINT(F("Offsets written: ")); DEBUG_PRINTLN(enableDrive); 
         delay(1000);
   } else if (buttonsR.up && !buttonsL.up) {
       sendTo32u4Data.soundcmd = 1;  // Play surprised!
+      sendPSI = 1;
       // #ifdef enableESPNOW
       //   // outgoingESPNOW.psi = sendPSI;
       //   // outgoingESPNOW.btn = sendHP;
@@ -123,6 +125,7 @@ void receiveRemote() {
       // #endif
   } else if (buttonsR.right) { // check for key press
       sendTo32u4Data.soundcmd = 2;  // Play quick answer!
+      sendPSI = 2; // send sound command to ESPNOW DOME
       // #ifdef enableESPNOW
       //   // outgoingESPNOW.psi = sendPSI;
       //   // outgoingESPNOW.btn = sendHP;
@@ -137,6 +140,7 @@ void receiveRemote() {
         sendTo32u4Data.soundcmd = 99;  // Play surprised!
       } else {
           sendTo32u4Data.soundcmd = 3;  // Play surprised!
+          sendPSI = 3; // send sound command to ESPNOW DOME
           // #ifdef enableESPNOW
           //   // outgoingESPNOW.psi = sendPSI;
           //   // outgoingESPNOW.btn = sendHP;
@@ -147,24 +151,36 @@ void receiveRemote() {
       }
   } else if (buttonsR.left) { // check for key press
     sendTo32u4Data.soundcmd = 4;  // Play surprised!
+    sendPSI = 4;
   } else if (buttonsL.up) { // check for key press
     if (buttonsR.up) {
         setOffsetsAndSaveToEEPROM(); // If both Ups are pushed - call Store Configuration in Preferences (EEPROM)
         sendTo32u4Data.soundcmd = 99;  // Play surprised!
+        sendPSI = 99;
       } else sendTo32u4Data.soundcmd = 1;  // Play surprised!
     sendTo32u4Data.soundcmd = 5;  // Play surprised!
+    sendPSI = 5;
   } else if (buttonsL.right) { // check for key press
     sendTo32u4Data.soundcmd = 6;  // Play surprised!
+    sendPSI = 6;
   } else if (buttonsL.down) { // check for key press
     if (buttonsR.down) {
     wipenvram(); // If both Ups are pushed - call Store Configuration in Preferences (EEPROM)
     sendTo32u4Data.soundcmd = 99;  // Play surprised!
-      } else sendTo32u4Data.soundcmd = 7;  // Play surprised!
+      } else { 
+        sendTo32u4Data.soundcmd = 7;  // Play surprised!
+        sendPSI = 7;
+      }
   } else if (buttonsL.left) { // check for key press
     sendTo32u4Data.soundcmd = 8;  // Play surprised!
+    sendPSI = 8;
   } else if (buttonsR.circle) { // check for key press
     sendTo32u4Data.soundcmd = 9;  // Play surprised!
-  } else sendTo32u4Data.soundcmd = 0;
+    sendPSI = 9;
+  } else {
+    sendTo32u4Data.soundcmd = 0;
+    sendPSI = 0;
+  }
 
  // Enable or disable Drives (including Dome Controls) leave sounds working
     if(CHECK_BUTTON_PRESSEDR(ps)){
@@ -195,13 +211,13 @@ void receiveRemote() {
       }
     }
      // Enable or disable Dome motor servo mode
-    if(CHECK_BUTTON_PRESSEDR(up)){
-      if (sendPSI==1) {
-        sendPSI = 0;
-      } else {
-        sendPSI = 1;
-      }
-    }
+    // if(CHECK_BUTTON_PRESSEDR(up)){
+    //   if (sendPSI==1) {
+    //     sendPSI = 0;
+    //   } else {
+    //     sendPSI = 1;
+    //   }
+    // }
     // if (buttonsL.ps) {
     //   DEBUG_PRINTLN("Dome Servo Mode");
     //   if (buttonsL.cross) {

@@ -10,7 +10,7 @@ void mp3play (){
         mp3.stop();        
       }
       // } else sndplaying = false;
-      mp3.playTrack(soundcmd);
+      mp3.playFile(soundcmd);
       soundcmd = 0;
     }
     if (sndplaying) {

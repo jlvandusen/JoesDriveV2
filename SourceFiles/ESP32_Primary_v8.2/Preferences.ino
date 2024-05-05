@@ -99,7 +99,11 @@ void setOffsetsAndSaveToEEPROM() {
 
 
 void wipenvram() {
-  nvs_flash_erase(); // erase the NVS partition and...
-  nvs_flash_init(); // initialize the NVS partition.
-  while(true);
+  preferences.clear();
+  rollOffset = 0;
+  pitchOffset = 0;
+  potOffsetS2S = 0;
+  // nvs_flash_erase(); // erase the NVS partition and...
+  // nvs_flash_init(); // initialize the NVS partition.
+  // while(true);
 }

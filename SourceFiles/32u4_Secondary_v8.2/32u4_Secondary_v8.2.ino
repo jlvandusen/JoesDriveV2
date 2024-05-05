@@ -1,5 +1,5 @@
 /*
- * Joe's Drive  - V2.3 03/2024
+ * Joe's Drive  - V8.2 05/2024
  * Secondary 32u4 Dome movement and PSI Body lights v8.2 PCB Board
  * Written by James VanDusen - https://www.facebook.com/groups/799682090827096
  * Utilizes Adafruit Feather 32u4 Basic Proto: 
@@ -49,14 +49,15 @@
 /*  MP3 Trigger types supported
  *  Still to do: VS105 and Zio
 */
-#define NoMP3 // Dont want to use MP3 services on this board
-// #define MP3Sparkfun  // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
+// #define NoMP3 // Dont want to use MP3 services on this board
+#define MP3Sparkfun  // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
 // #define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
 // #define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
 // #define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
 
-// #define UseHallMonitor  // Allow use of hall monitor installed to set forward direction of the dome otherwise set via Pref save on Controllers
-#define EnableFilters // Providing 
+#define UseHallMonitor  // Allow use of hall monitor installed to set forward direction of the dome otherwise set via Pref save on Controllers
+// #define EnableFilters // Providing filtering against raw data reads from ESP32 over serial UNDER_CONSTRUCTION
+// #define UseNEO // If not using RX capabilities from DFplayer can use for NEO Pixel controls of body UNDER_CONSTRUCTION
 
 /* Debug Printlines */
 #define SerialDebug Serial
@@ -85,8 +86,8 @@
 
 #define leftServoOffset -7
 #define rightServoOffset 0
-#define PIN_MP3_TX 21  // Connects to 32u4's A3 21
-#define PIN_MP3_RX 22  // Connects to 32u4's A4 22
+#define PIN_MP3_TX 5  // Connects to 32u4's 5
+#define PIN_MP3_RX 13  // Connects to 32u4's A4 22 or 13 (NEO)
 
 #ifdef EnableFilters
   #include <Ewma.h>
