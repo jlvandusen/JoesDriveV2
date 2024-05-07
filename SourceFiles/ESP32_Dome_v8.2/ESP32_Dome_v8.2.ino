@@ -19,13 +19,17 @@
  * PIN DEFINITIONS
 */
 
-#define battPin     A13 //A0    
-#define psiPIN      25 //A1 // Use the appropriate GPIO pin (e.g., GPIO16)
-#define psiPixels    1 // Number of LEDs in your NeoPixel strip
-#define sLogicPIN   27
-#define lLogicPIN   33 
-#define hpPIN       15
-#define eyePIN      32
+#define battPin       A13 //A0    
+#define psiPIN        25 //A1 // Use the appropriate GPIO pin (e.g., GPIO16)
+#define psiPixels     1 // Number of LEDs in your NeoPixel strip
+#define sLogicPIN     27
+#define sLogicPixels  1
+#define lLogicPIN     33 
+#define lLogicPixels  1 
+#define hpPIN         15
+#define hpPixels      1
+#define eyePIN        32
+#define eyePixels     1
 
 #define dataDelay   0
 #define recDelay    10
@@ -54,12 +58,21 @@ int incomingPSI = 0;
 byte incomingBTN = 0;
 float incomingBAT = 0;      
 
-unsigned long randomMillis, previousMillis, previousMillis2, lastSendRecMillis;
-unsigned long lastHPCycleMillis, randomMillisSingle, BTNstateMillis, lastBattUpdate;
-unsigned long lastBodyReceive, lastFlash;
+unsigned long startTime = 0;
+const int NUM_PIXELS = 1; // Assuming you have 1 LED
+bool flicker = false; // Flag to control flickering
 int psiVal;
-unsigned long startTime = millis();
-unsigned long duration = 3000; // 3 seconds
+bool shouldFlicker = false;
+unsigned long flickerEndTime = 0;
+
+// Timers for color change
+unsigned long sLogicLastChange = 0;
+unsigned long lLogicLastChange = 0;
+unsigned long EYELastChange = 0;
+int sLogicChangeInterval = random(3000, 10000); // Random interval between 3-10 seconds
+int lLogicChangeInterval = random(3000, 10000); // Random interval between 3-10 seconds
+int EYEChangeInterval = random(3000, 10000);
+
 
 // Structure to send data
 // Must match the receiver structure
@@ -128,107 +141,13 @@ void setup() {
 void loop() {
   // check_SND_Timing();
   displayPSI();
+  displayEYE();
+  displayHP();
+  displaysLOGIC();
+  displaylLOGIC();
+
+
+  
   debugRoutines();
 
-}
-
-void displayPSI () {
- startTime = millis();
-      for (int pixel = 0; pixel < NUM_PIXELS; pixel++) {
-          // Generate random white level (adjust as needed)
-          int whiteLevel = 255;
-          PSI.setPixelColor(pixel, PSI.Color(whiteLevel, whiteLevel, whiteLevel));
-      }
-      PSI.show(); // Apply the changes
-      // delay(50); // Flicker rate (adjust as needed)
-
-
-  // if (incomingPSI != 0 || psiVal == 1){
-  //   psiVal = 1;
-  //   // while (random(0,3000)) {
-  //     // Flicker effect: Randomly adjust brightness for each pixel
-  //   for (int i = 0; i < NUM_PIXELS; i++) {
-  //       int brightness = random(0, 256);  // Random brightness value
-  //       PSI.setPixelColor(i, PSI.Color(brightness, brightness, brightness));
-  //   }
-  //   PSI.show();  // Update NeoPixel colors
-  //   delay(random(0, 256));    // Adjust delay for flicker speed
-  //   // }
-    
-  // } else {
-  //   psiVal = 0;
-  //   PSI.setBrightness(0); // Set brightness to 0 (fully off)
-  //   // PSI.setPixelColor(NUM_PIXELS, PSI.Color(brightness, brightness, brightness));
-  //   PSI.show();  // Update NeoPixel colors
-  //   // delay(100);    // Adjust delay for flicker speed
-  // }
-}
-
-/*  
- *  ESPNOW Callback when data is received
- *  See walkthrough: https://randomnerdtutorials.com/esp-now-two-way-communication-esp32/
-*/
- 
-void OnDataRecv(const uint8_t * mac, const uint8_t *incomingData, int len) {
-  memcpy(&incomingReadings, incomingData, sizeof(incomingReadings));
-  #ifdef debugRecieveESPNOW
-  Serial.print("Bytes received: ");
-  Serial.println(len);
-  #endif
-  incomingPSI = incomingReadings.psi;
-  incomingBTN = incomingReadings.btn;
-  incomingBAT = incomingReadings.bat;
-}
-
-/* 
- *  ESPNOW Callback when data is sent
-*/
-void OnDataSent(const uint8_t *mac_addr, esp_now_send_status_t status) {
-  #ifdef debugSendESPNOW
-  Serial.print("\r\nLast Packet Send Status:\t");
-  Serial.println(status == ESP_NOW_SEND_SUCCESS ? "Delivery Success" : "Delivery Fail");
-  
-  if (status ==0){
-    success = "Delivery Success :)";
-  }
-  else{
-    success = "Delivery Fail :(";
-  }
-  #endif 
-}
-
-void check_SND_Timing(){
-//   if (incomingPSI != 0) {
-//     flickerPSI(); // Continue flickering for 3 seconds
-//   } else {
-//     while (millis() - startTime < 3000) {
-//             flickerPSI();
-//     }
-//         // Turn off NeoPixel
-//     PSI.setBrightness(0); // Set brightness to 0 (fully off)
-//     // PSI.setPixelColor(NUM_PIXELS, PSI.Color(brightness, brightness, brightness));
-//     PSI.show();  // Update NeoPixel colors
-//   }
-}
-
-void sendAndReceive(){
-  if(millis() - lastSendRecMillis >= recDelay){
-    // PSILED(); 
-    lastBodyReceive = millis();
-  }
-  lastSendRecMillis = millis(); 
-  // battLevel();
-}
-
-void debugRoutines() {
-#ifdef debugBody
-// if (incomingPSI != 0 || incomingBTN != 0 || incomingBAT != 0.00) {
-  Serial.print(F("incomingPSI: ")); Serial.print(incomingPSI); Serial.print('\t'); 
-  Serial.print(F("incomingBTN: ")); Serial.print(incomingBTN); Serial.print('\t');
-  // Serial.print(F("BTNstate: ")); Serial.print(BTNstate); Serial.print('\t');
-  Serial.print(F("incomingBAT: ")); Serial.print(incomingBAT); Serial.println('\t'); 
-  // Serial.print(F("Dome/BAT: ")); Serial.print(sendBAT); Serial.print('\t'); 
-  // Serial.print(F("incomingPSI: ")); Serial.print(incomingPSI); Serial.println('\t');  
-// }
-#endif
 }
