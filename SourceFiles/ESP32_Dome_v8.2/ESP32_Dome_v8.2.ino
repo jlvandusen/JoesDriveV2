@@ -9,12 +9,12 @@
  * replace this with the mac of body uint8_t broadcastAddress[] = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
 */
 #define SerialDebug Serial  // redirect debug to alternate Serial ports
-//#define debugDome
-#define debugBody // Validate and feedback what is being received from Body (PSI, BTN and Bat)
-//#define debugRecieveESPNOW // Raw values over the ESPNOW channel
-//#define debugSendESPNOW
-//#define ESPNOWCONFIG  // Configure the system to display its wifi mac and bluetooth addresses for insert into Body code.
-//#define DebugESPNOW
+// #define debugDome
+// #define debugBody // Validate and feedback what is being received from Body (PSI, BTN and Bat)
+// #define debugRecieveESPNOW // Raw values over the ESPNOW channel
+// #define debugSendESPNOW
+// #define ESPNOWCONFIG  // Configure the system to display its wifi mac and bluetooth addresses for insert into Body code.
+// #define DebugESPNOW
 /*
  * PIN DEFINITIONS
 */
@@ -103,6 +103,14 @@ void setup() {
   delay(5000);  
   PSI.begin();  // Initialize NeoPixel strip
   PSI.setBrightness(50);  // Set overall brightness (0-255)
+  EYE.begin();  // Initialize NeoPixel strip
+  EYE.setBrightness(50);  // Set overall brightness (0-255)
+  HP.begin();  // Initialize NeoPixel strip
+  HP.setBrightness(50);  // Set overall brightness (0-255)
+  sLOGIC.begin();  // Initialize NeoPixel strip
+  sLOGIC.setBrightness(50);  // Set overall brightness (0-255)
+  lLOGIC.begin();  // Initialize NeoPixel strip
+  lLOGIC.setBrightness(50);  // Set overall brightness (0-255)
 
   #ifdef ESPNOWCONFIG
   WiFi.mode(WIFI_MODE_STA);
