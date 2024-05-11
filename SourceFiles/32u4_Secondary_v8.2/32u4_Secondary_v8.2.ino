@@ -49,11 +49,11 @@
 /*  MP3 Trigger types supported
  *  Still to do: VS105 and Zio
 */
-// #define NoMP3 // Dont want to use MP3 services on this board
-#define MP3Sparkfun  // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
-// #define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
-// #define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
-// #define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
+#define NoMP3 // Dont want to use MP3 services on this board
+//#define MP3Sparkfun  // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
+//#define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
+//#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
+//#define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
 
 #define UseHallMonitor  // Allow use of hall monitor installed to set forward direction of the dome otherwise set via Pref save on Controllers
 // #define EnableFilters // Providing filtering against raw data reads from ESP32 over serial UNDER_CONSTRUCTION
@@ -178,6 +178,11 @@ float R1 = 30000.0;  //30k
 float R2 = 7500.0;   //7.5k5 or 7k5
 float pitch, roll;
 
+volatile long encoderPosition = 0;
+volatile bool aState;
+volatile bool bState;
+
+
 bool domeCenterSet = false, domeServoMode = false, r3Flag = false, psiFlash = false, xboxR3Was = false, moveR3Was = false, moveL3Was = false, enableDrive = false, reverseDrive = false;
 bool domeServoModeFiltered = false,enableDriveFiltered = false, reverseDriveFiltered = false;
 
@@ -185,6 +190,11 @@ unsigned long currentMillis, receiveMillis, lastPrintMillis, lastVSMillis, lastS
 int8_t soundcmd = 0, soundcmdFiltered = 0;
 bool sndplaying = false;
 int psiValue, domeServoPWM, domeServoPWMFiltered;
+
+const int maxDegrees = 40;         // Maximum degrees to turn from the center
+const int encoderCountsPerRevolution = 1680; // Updated with NeveRest 60 encoder's specification
+const int degreesPerCount = encoderCountsPerRevolution / 360;
+int targetPosition = 0;            // Target position in encoder counts
 
 /* VarSpeedServo Library - Basic Example
  * https://github.com/netlabtoolkit/VarSpeedServo
@@ -317,6 +327,10 @@ void setup() {
   pinMode(domeMotor_pwm, OUTPUT);    // Speed Of Motor1 on Motor Driver 1
   pinMode(domeMotor_pin_A, OUTPUT);  // Direction
   pinMode(domeMotor_pin_B, OUTPUT);
+  pinMode (motorEncoder_pin_A, INPUT);    //18 A0 - 32u4 Basic Proto/32u4 RF, 14 - 32u4 Proto M0 Feather M0
+  pinMode (motorEncoder_pin_B, INPUT);    //19 A1 - 32u4 Basic Proto/32u4 RF, 15 - 32u4 Proto M0 Feather M0
+//  attachInterrupt(digitalPinToInterrupt(motorEncoder_pin_A), readEncoder, CHANGE);
+//  attachInterrupt(digitalPinToInterrupt(motorEncoder_pin_B), readEncoder, CHANGE);
   #ifndef UseHallMonitor
     domeCenterSet = true; 
     myEnc.write(740); //740
@@ -326,16 +340,15 @@ void setup() {
 void loop() {
   Timechecks();
   SendRecieveData();
-  if (enableDrive == 1) {
-    encoder();
+  if (enableDrive) {
+//    encoder();
     Servos();
     spinStuff();
-    if(!domeCenterSet){
-      setDomeCenter(); 
-    }
+//    if(!domeCenterSet){
+//      setDomeCenter(); 
+//    }
   }
 
   Timechecks();
   mp3play();
 }
-
