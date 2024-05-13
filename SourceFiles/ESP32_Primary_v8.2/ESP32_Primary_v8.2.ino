@@ -38,6 +38,7 @@
 #define revS2S                  // uncomment to reverse the POT and S2S variables essentially reversing the current position tracking
 // #define revDrive
 // #define revGyro
+// #define checksumValidation      // uncomment to Provide more robust error correction between the ESP32 and the 32u4 over Serial1
 
 #define driveDelay .75
 #define maxS2STilt 30           // controls how far the S2S control using a joystick will it tilt... currently 25 should be max.
@@ -48,7 +49,6 @@
  * Comment and uncomment which function needs to be debugged
 */
 
-// #define ESPNOWCONFIG
 // #define debugESPNOW
 // #define debugESPNOWSend
 // #define debugESPNOWReceive
@@ -263,6 +263,8 @@ float incomingBAT = 0;
 */
 String success;
 
+
+
 /*
  * Create Send Data for ESPNOW
  * must match the receiver structure
@@ -443,6 +445,8 @@ void setup() {
   if (esp_now_add_peer(&peerInfo) != ESP_OK) {   // Add peer        
     Serial.println("Failed to add peer");
     return;
+  } else {
+    Serial.println("waiting to add peer");
   }
   // Register for a callback function that will be called when data is received
   esp_now_register_recv_cb(OnDataRecv);
@@ -496,6 +500,14 @@ void receiveIMU(){
 
 void sendDataTo32u4(){
   send32u4.sendData(); 
+  #ifdef checksumValidation
+    // Calculate the checksum
+    uint8_t checksum = 0;
+    checksum += sendTo32u4Data.leftStickX;
+    checksum += sendTo32u4Data.leftStickY;
+    // Add other relevant fields to the checksum if needed
+    Serial1.write(checksum);  // Send the checksum byte
+  #endif
   if(rec32u4.receiveData()){
     rec32u4Millis = currentMillis;
     if(feather2Connected == false){

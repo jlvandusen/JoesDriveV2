@@ -259,6 +259,13 @@ void receiveRemote() {
 // Send all Left Stick commands to the 32u4 if its the left dome controller
     if((buttonsL.leftStickX < -(joystickDeadZoneRange)) || (buttonsL.leftStickX > (joystickDeadZoneRange))){
       sendTo32u4Data.leftStickX = buttonsL.leftStickX;
+      #ifdef checksumValidation
+        // Calculate the checksum
+        uint8_t checksum = 0;
+        checksum += sendTo32u4Data.leftStickX;
+        checksum += sendTo32u4Data.leftStickY;
+        // Add other relevant fields to the checksum if needed
+      #endif
     }else{
       sendTo32u4Data.leftStickX = 0; 
     }

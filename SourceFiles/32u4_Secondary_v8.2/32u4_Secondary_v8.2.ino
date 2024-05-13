@@ -26,7 +26,8 @@
  * Comment and uncomment which function needs to be debugged
 */
 // #define debugDomeAndFly
-// #define printRemote
+// #define debugDomeMotor
+#define printRemote
 // #define debugVS
 // #define debugPSI
 // #define printServoPositions
@@ -53,11 +54,12 @@
 //#define MP3Sparkfun  // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
 //#define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
 //#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
-//#define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
+// #define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
 
 #define UseHallMonitor  // Allow use of hall monitor installed to set forward direction of the dome otherwise set via Pref save on Controllers
 // #define EnableFilters // Providing filtering against raw data reads from ESP32 over serial UNDER_CONSTRUCTION
 // #define UseNEO // If not using RX capabilities from DFplayer can use for NEO Pixel controls of body UNDER_CONSTRUCTION
+// #define checksumValidation
 
 /* Debug Printlines */
 #define SerialDebug Serial
@@ -80,14 +82,15 @@
 
 #define servoSpeed 500
 #define servoEase 5  // 10
+#define domeMotorDeadzone 5  // 10
 #define domeTiltYAxis_MaxAngle 25 // 20
 #define domeTiltXAxis_MaxAngle 25 // 20
 #define printMillis 5
 
 #define leftServoOffset -7
 #define rightServoOffset 0
-#define PIN_MP3_TX 5  // Connects to 32u4's 5
-#define PIN_MP3_RX 13  // Connects to 32u4's A4 22 or 13 (NEO)
+#define PIN_MP3_TX 5  // Connects to 32u4's 5 for use with DFplayer
+#define PIN_MP3_RX 13  // Connects to 32u4's A4 22 or 13 (NEO) for use with DFplayer
 
 #ifdef EnableFilters
   #include <Ewma.h>
@@ -122,7 +125,6 @@ int8_t sound;
 #endif
 
 #ifdef MP3VS105
-
 // include SPI, MP3 and SD libraries
 #include <SPI.h>
 #include <SD.h>
@@ -136,15 +138,15 @@ int8_t sound;
 #define VS1053_DREQ 9  // VS1053 Data request, ideally an Interrupt pin
 
 Adafruit_VS1053_FilePlayer musicPlayer =
-  Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
+Adafruit_VS1053_FilePlayer(VS1053_RESET, VS1053_CS, VS1053_DCS, VS1053_DREQ, CARDCS);
 int randomsound = random(1, 55);
 int8_t sound;
 String FileName;
 #endif
 
+// include Easy Transfer library and support configurations for communications to/from ESP32
 #include <EasyTransfer.h>
 #include <PID_v1.h>
-
 EasyTransfer recESP32;
 EasyTransfer sendESP32;
 
@@ -230,21 +232,29 @@ double Kp_domeSpinServoPid = 4, Ki_domeSpinServoPid = 0, Kd_domeSpinServoPid = 0
 PID myPID_domeSpinServoPid(&Input_domeSpinServoPid, &Output_domeSpinServoPid, &Setpoint_domeSpinServoPid, Kp_domeSpinServoPid, Ki_domeSpinServoPid, Kd_domeSpinServoPid, DIRECT);
 
 void setup() {
+  delay(10000); 
   Serial.begin(115200);
   Serial1.begin(74880);  // 74880 78440 57600
 
 #ifdef MP3DFPlayer
   FPSerial.begin(9600);
   Serial.println(F("Initializing DFPlayer ... (May take 3~5 seconds)"));
-  delay(3000);
-  if (myDFPlayer.begin(FPSerial, /*isACK = */ true, /*doReset = */ true)) {  //Use serial to communicate with mp3.
-    Serial.println(F("DFPlayer Mini online."));
-    myDFPlayer.volume(20);  //Set volume value. From 0 to 30
-    myDFPlayer.play(1);     //Play the first mp3
-  } else if (!myDFPlayer.begin(FPSerial, /*isACK = */ true, /*doReset = */ true)) {
-    Serial.println(F("Unable to begin:"));
-    Serial.println(F("1.Please recheck the connection!"));
-    Serial.println(F("2.Please insert the SD card!"));
+  // if (myDFPlayer.begin(FPSerial, /*isACK = */ true, /*doReset = */ true)) {  //Use serial to communicate with mp3.
+  // // if (!myDFPlayer.begin(FPSerial, true, false)) {
+  //   Serial.println(F("DFPlayer Mini online."));
+  //   myDFPlayer.volume(20);  //Set volume value. From 0 to 30
+  //   myDFPlayer.play(1);     //Play the first mp3
+  // } else if (!myDFPlayer.begin(FPSerial, /*isACK = */ true, /*doReset = */ true)) {
+  //   Serial.println(F("Unable to begin:"));
+  //   Serial.println(F("1.Please recheck the connection!"));
+  //   Serial.println(F("2.Please insert the SD card!"));
+  // }
+  if (myDFPlayer.begin(FPSerial, true, false)) {
+    Serial.println("DFPlayer Mini initialized successfully!");
+    myDFPlayer.volume(30); // Set volume to maximum (0 to 30)
+    myDFPlayer.playMp3Folder(1); // Play the "0001.mp3" in the "mp3" folder
+  } else {
+    Serial.println("Connecting to DFPlayer Mini failed!");
   }
 #endif
 

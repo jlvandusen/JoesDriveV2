@@ -22,6 +22,27 @@ void mp3play (){
   }
 #endif
 
+#ifdef MP3DFPlayer
+    // sndplaying = myDFPlayer.isPlaying();
+    if (soundcmd != 0) {
+      if (soundcmd == 9) soundcmd = randomsound;
+      // if (sndplaying) {
+        // myDFPlayer.stop();        
+      // }
+      // } else sndplaying = false;
+      // myDFPlayer.playFile(soundcmd);
+      myDFPlayer.playMp3Folder(soundcmd);
+      soundcmd = 0;
+      sndplaying = myDFPlayer.read();
+    }
+    // if (sndplaying) {
+
+    // } else if (!sndplaying) 
+    // {
+    //   soundcmd = 0;
+    // }
+#endif
+
 #ifdef MP3Zio
   if (mp3.isConnected()) {  // check if the MP3 Trigger is connected via i2c
     if (soundcmd != 0) {

@@ -49,7 +49,7 @@ void setup(){
 
   setupmpu(); // Calls and displays various readings for the frequencies
   mpu_temp = mpu.getTemperatureSensor();
-  mpu_temp->printSensorDetails();M
+  mpu_temp->printSensorDetails();
 
   mpu_accel = mpu.getAccelerometerSensor();
   mpu_accel->printSensorDetails();
