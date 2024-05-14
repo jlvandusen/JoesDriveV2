@@ -56,7 +56,7 @@
 //#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
 // #define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
 
-#define UseHallMonitor  // Allow use of hall monitor installed to set forward direction of the dome otherwise set via Pref save on Controllers
+#define useHallSensor  // Allow use of hall monitor installed to set forward direction of the dome otherwise set via Pref save on Controllers
 // #define EnableFilters // Providing filtering against raw data reads from ESP32 over serial UNDER_CONSTRUCTION
 // #define UseNEO // If not using RX capabilities from DFplayer can use for NEO Pixel controls of body UNDER_CONSTRUCTION
 // #define checksumValidation
@@ -341,7 +341,7 @@ void setup() {
   pinMode (motorEncoder_pin_B, INPUT);    //19 A1 - 32u4 Basic Proto/32u4 RF, 15 - 32u4 Proto M0 Feather M0
 //  attachInterrupt(digitalPinToInterrupt(motorEncoder_pin_A), readEncoder, CHANGE);
 //  attachInterrupt(digitalPinToInterrupt(motorEncoder_pin_B), readEncoder, CHANGE);
-  #ifndef UseHallMonitor
+  #ifndef useHallSensor
     domeCenterSet = true; 
     myEnc.write(740); //740
   #endif
