@@ -33,7 +33,7 @@ void mp3play (){
       // myDFPlayer.playFile(soundcmd);
       myDFPlayer.playMp3Folder(soundcmd);
       soundcmd = 0;
-      sndplaying = myDFPlayer.read();
+      // sndplaying = myDFPlayer.read();
     }
     // if (sndplaying) {
 
