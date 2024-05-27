@@ -136,10 +136,10 @@ void drive_Movement() {
 void spinFlywheel() {
   if (EnableFlywheel && enableDrive) {
     if (reverseDrive) {
-      flywheel = map(buttonsR.rightStickX, -128,128,255,-255);
+      flywheel = map(buttonsR.rightStickX, -127,127,255,-255);
       constrain(flywheel, 255, -255);
     } else {
-        flywheel = map(buttonsR.rightStickX, -128,128,-255,255);
+        flywheel = map(buttonsR.rightStickX, -127,127,-255,255);
         constrain(flywheel, -255, 255);
     }
     if (flywheel < -10) {
@@ -155,6 +155,10 @@ void spinFlywheel() {
           digitalWrite(flyWheelMotor_pin_A, LOW); // Motor 1 Forward
         }
     analogWrite(flyWheelMotor_pwm,abs(flywheel));
+  }else {
+          flywheel = 0;
+          digitalWrite(flyWheelMotor_pin_A, LOW);
+          digitalWrite(flyWheelMotor_pin_A, LOW); // Motor 1 Forward
   }
 }
 

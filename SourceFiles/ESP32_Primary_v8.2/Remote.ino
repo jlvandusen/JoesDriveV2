@@ -59,7 +59,7 @@ void receiveRemote() {
       EnableFlywheel = false;
     }
     if(buttonsR.l1){ // Check if the drive Controller L1 Button is held (Flywheel disengaged, dome engaged)
-      flywheel = 0;
+      EnableFlywheel = false;
       sendTo32u4Data.domeSpin = buttonsR.rightStickX;
       buttonsR.rightStickY = 0;
     } else {

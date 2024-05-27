@@ -59,7 +59,7 @@
 // #define debugIMU
 // #define debugPOTS
 // #define debugMainDrive
-// #define debugFlywheel
+#define debugFlywheel
 // #define debugS2S
 // #define debugS2SPot
 // #define debugSounds
@@ -320,7 +320,7 @@ double easing_S2S;
 
 int Output_flywheel_pwm; // variables for PWM controls of flywheel
 int Output_domeSpin_pwm;
-int flywheelRotation;
+// int flywheelRotation;
 double flywheel;
 double flywheelEase;
 // double Setpoint_Drive, Input_Drive, Output_Drive, Setpoint_Drive_In;

@@ -118,15 +118,12 @@ double S2SDebug_pot = analogRead(S2SPot_pin);
 #endif
 
 #ifdef debugFlywheel
-
-    
     DEBUG_PRINT(F("EnableFly: ")); DEBUG_PRINT(EnableFlywheel); DEBUG_PRINT('\t'); 
     DEBUG_PRINT(F("flywheel: ")); DEBUG_PRINT(abs(flywheel)); DEBUG_PRINT('\t'); 
-    DEBUG_PRINT(F("flywheelRot: ")); DEBUG_PRINT(flywheelRotation); DEBUG_PRINT('\t'); 
+    // DEBUG_PRINT(F("flywheelRot: ")); DEBUG_PRINT(flywheelRotation); DEBUG_PRINT('\t'); 
     DEBUG_PRINT(F("Joy: ")); DEBUG_PRINT(buttonsR.rightStickX); DEBUG_PRINT('\t'); 
     DEBUG_PRINT(F("ControllerConn.: ")); DEBUG_PRINT(controllerConnected); DEBUG_PRINT('\t');
     DEBUG_PRINT(F("En: ")); DEBUG_PRINTLN(enableDrive); 
-      
 #endif
 
 #ifdef debugMainDrive
