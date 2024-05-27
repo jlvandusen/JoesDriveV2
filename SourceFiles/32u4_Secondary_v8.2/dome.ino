@@ -18,8 +18,9 @@ void spinDomeServo () {
     }
     int hallEffectSensorState = digitalRead(hallEffectSensor_Pin);
     int motorSpeed = 0; // Variable for motor speed
-    
-    if (hallEffectSensorState == HIGH || hallEffectSensorState == LOW) {
+
+    // if (hallEffectSensorState == 1 || hallEffectSensorState == 0) {
+    if (hallEffectSensorState == 0) {
       // The spindle is in the forward position
       targetPosition = myEnc.read();
     } else {

@@ -27,7 +27,7 @@
 */
 // #define debugDomeAndFly
 // #define debugDomeMotor
-#define printRemote
+// #define printRemote
 // #define debugVS
 // #define debugPSI
 // #define printServoPositions
@@ -81,7 +81,7 @@
 #define NeoPixel_pin 13
 
 #define servoSpeed 500
-#define servoEase 5  // 10
+#define servoEase 5  // 10 5
 #define domeMotorDeadzone 5  // 10
 #define domeTiltYAxis_MaxAngle 25 // 20
 #define domeTiltXAxis_MaxAngle 25 // 20

@@ -1,17 +1,17 @@
 void debugRoutines(){
 
   #ifdef debugDOME
+    int hallEffectSensor = digitalRead(hallEffectSensor_Pin);
+    int currentPosition = myEnc.read();
+    int positionDifference = targetPosition - currentPosition;
     SerialDebug.print(F("encPos: ")); SerialDebug.print(encPos); SerialDebug.print('\t');
     SerialDebug.print(F("domeCenterSet: ")); SerialDebug.print(domeCenterSet); SerialDebug.print('\t');
     SerialDebug.print(F("domeServoMode: ")); SerialDebug.print(domeServoMode); SerialDebug.print('\t');
     SerialDebug.print(F("domeSpin: ")); SerialDebug.print(receiveFromESP32Data.domeSpin); SerialDebug.print('\t');
-    SerialDebug.print(F("leftStickX: ")); SerialDebug.print(receiveFromESP32Data.leftStickX); SerialDebug.print('\t');
-    SerialDebug.print(F("domeServoPWM: ")); SerialDebug.print(domeServoPWM); SerialDebug.print('\t');
-    SerialDebug.print(F("Setpoint: ")); SerialDebug.print(Setpoint_domeSpinServoPid); SerialDebug.print('\t');
-    SerialDebug.print(F("Input: ")); SerialDebug.print(Input_domeSpinServoPid); SerialDebug.print('\t');
-    SerialDebug.print(F("Output: ")); SerialDebug.print(Output_domeSpinServoPid); SerialDebug.print('\t');
+    SerialDebug.print(F("positionDifference: ")); SerialDebug.print(positionDifference); SerialDebug.print('\t');
+    SerialDebug.print(F("targetPosition: ")); SerialDebug.print(targetPosition); SerialDebug.print('\t');
+    SerialDebug.print(F("hallEffectSensor: ")); SerialDebug.print(hallEffectSensor); SerialDebug.print('\t');
     SerialDebug.print(F("enableDrive: ")); Serial.print(enableDrive); SerialDebug.println('\t');
-       
   #endif
   
   #ifdef debugHALLFull
@@ -108,29 +108,6 @@ void debugRoutines(){
     Serial.print("\t"); Serial.print(sndplaying);
     Serial.println();
   #endif
-
-  #ifdef debugDomeAndFly
-    Serial.print("EN: "); Serial.print(receiveFromESP32Data.driveEnabled);
-    if(receiveFromESP32Data.xboxL1 == 0 && receiveFromESP32Data.xboxR1 == 0){
-      if(domeServoMode){
-        Serial.print(" ServoMode: In: "); Serial.print(Input_domeSpinServoPid);
-        Serial.print("  Set: "); Serial.print(Setpoint_domeSpinServoPid); 
-        Serial.println("  Out: "); Serial.println(Output_domeSpinServoPid); 
-      } else {
-        Serial.print(" Spin L: "); Serial.print(receiveFromESP32Data.xboxL2); 
-        Serial.println("R: "); Serial.println(receiveFromESP32Data.xboxR2); 
-      }
-    } else {
-      Serial.print(" Fly L: "); Serial.print(receiveFromESP32Data.xboxL2); 
-      Serial.println("R: "); Serial.println(receiveFromESP32Data.xboxR2); 
-    }
-  #endif
-
-
-// #ifdef debugPSI
-//   Serial.print("L: "); Serial.print(analogRead(psiSensor_pin_L));
-//   Serial.println("    R: "); Serial.println(analogRead(psiSensor_pin_R));
-// #endif
 
   #ifdef debugPSI
     Serial.print(" soundcmd: "); Serial.print(soundcmd); 

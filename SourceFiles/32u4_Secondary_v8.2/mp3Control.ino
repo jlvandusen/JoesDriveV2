@@ -1,6 +1,8 @@
 void mp3play (){
-// #define MP3Sparkfun // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
-// #define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
+//#define MP3Sparkfun  // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
+//#define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
+//#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
+//#define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
 #ifdef MP3Sparkfun
   if (mp3.isConnected()) {  // check if the MP3 Trigger is connected via i2c
     sndplaying = mp3.isPlaying();
