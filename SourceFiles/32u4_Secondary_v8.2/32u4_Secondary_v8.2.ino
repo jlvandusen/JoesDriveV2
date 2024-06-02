@@ -50,11 +50,11 @@
 /*  MP3 Trigger types supported
  *  Still to do: VS105 and Zio
 */
-// #define NoMP3 // Dont want to use MP3 services on this board
+#define NoMP3 // Dont want to use MP3 services on this board
 // #define MP3Sparkfun  // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
 // #define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
 // #define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
-#define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
+// #define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
 
 #define useHallSensor  // Allow use of hall monitor installed to set forward direction of the dome otherwise set via Pref save on Controllers
 // #define EnableFilters // Providing filtering against raw data reads from ESP32 over serial UNDER_CONSTRUCTION
