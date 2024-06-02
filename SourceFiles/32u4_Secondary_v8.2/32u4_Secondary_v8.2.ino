@@ -33,7 +33,7 @@
 // #define printServoPositions
 // #define printPitchAndRoll
 // #define debugServos
-#define debugDOME
+// #define debugDOME
 // #define debugEasyTransfer
 // #define debugHALLFull
 // #define debugHALL
