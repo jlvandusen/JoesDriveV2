@@ -33,7 +33,7 @@
 // #define printServoPositions
 // #define printPitchAndRoll
 // #define debugServos
-// #define debugDOME
+#define debugDOME
 // #define debugEasyTransfer
 // #define debugHALLFull
 // #define debugHALL
@@ -50,11 +50,11 @@
 /*  MP3 Trigger types supported
  *  Still to do: VS105 and Zio
 */
-#define NoMP3 // Dont want to use MP3 services on this board
-//#define MP3Sparkfun  // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
-//#define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
-//#define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
-// #define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
+// #define NoMP3 // Dont want to use MP3 services on this board
+// #define MP3Sparkfun  // Enable qwiic/i2c communications to MP3 trigger for Sparkfun
+// #define MP3Zio // Enable qwiic/i2c communications to MP3 trigger for Zio
+// #define MP3VS105 // Enable qwiic/i2c communications to MP3 trigger for Adafruit Featherwing VS105
+#define MP3DFPlayer // Enable onboard use of the DF Player Mini from DF Robot
 
 #define useHallSensor  // Allow use of hall monitor installed to set forward direction of the dome otherwise set via Pref save on Controllers
 // #define EnableFilters // Providing filtering against raw data reads from ESP32 over serial UNDER_CONSTRUCTION
@@ -193,10 +193,7 @@ int8_t soundcmd = 0, soundcmdFiltered = 0;
 bool sndplaying = false;
 int psiValue, domeServoPWM, domeServoPWMFiltered;
 
-const int maxDegrees = 40;         // Maximum degrees to turn from the center
-const int encoderCountsPerRevolution = 1680; // Updated with NeveRest 60 encoder's specification
-const int degreesPerCount = encoderCountsPerRevolution / 360;
-int targetPosition = 0;            // Target position in encoder counts
+
 
 /* VarSpeedServo Library - Basic Example
  * https://github.com/netlabtoolkit/VarSpeedServo
@@ -223,8 +220,10 @@ int encoderPos = 0;
 int aLastState = LOW;
 int domePrevPWM;
 double Setpoint_domeSpinServoPid, Input_domeSpinServoPid, Output_domeSpinServoPid;
-// int domecenter;
-
+const int maxDegrees = 40;         // Maximum degrees to turn from the center
+const int encoderCountsPerRevolution = 1680; // 1680 Updated with NeveRest 60 encoder's specification
+// const int degreesPerCount = encoderCountsPerRevolution / 360;
+int targetPosition = 0;            // Target position in encoder counts
 
 
 //Specify the links and initial tuning parameters for MyPID
@@ -343,8 +342,10 @@ void setup() {
 //  attachInterrupt(digitalPinToInterrupt(motorEncoder_pin_B), readEncoder, CHANGE);
   #ifndef useHallSensor
     domeCenterSet = true; 
-    myEnc.write(740); //740
-  #endif
+    myEnc.write(0); //740
+  #else
+    setDomeCenter();
+  #endif 
 }
 
 void loop() {

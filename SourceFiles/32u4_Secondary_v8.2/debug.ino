@@ -1,17 +1,22 @@
 void debugRoutines(){
 
   #ifdef debugDOME
-    int hallEffectSensor = digitalRead(hallEffectSensor_Pin);
-    int currentPosition = myEnc.read();
-    int positionDifference = targetPosition - currentPosition;
-    SerialDebug.print(F("encPos: ")); SerialDebug.print(encPos); SerialDebug.print('\t');
-    SerialDebug.print(F("domeCenterSet: ")); SerialDebug.print(domeCenterSet); SerialDebug.print('\t');
-    SerialDebug.print(F("domeServoMode: ")); SerialDebug.print(domeServoMode); SerialDebug.print('\t');
-    SerialDebug.print(F("domeSpin: ")); SerialDebug.print(receiveFromESP32Data.domeSpin); SerialDebug.print('\t');
-    SerialDebug.print(F("positionDifference: ")); SerialDebug.print(positionDifference); SerialDebug.print('\t');
-    SerialDebug.print(F("targetPosition: ")); SerialDebug.print(targetPosition); SerialDebug.print('\t');
-    SerialDebug.print(F("hallEffectSensor: ")); SerialDebug.print(hallEffectSensor); SerialDebug.print('\t');
-    SerialDebug.print(F("enableDrive: ")); Serial.print(enableDrive); SerialDebug.println('\t');
+    // int hallEffectSensor = digitalRead(hallEffectSensor_Pin);
+    // int currentPosition = myEnc.read();
+    // int positionDifference = targetPosition - currentPosition;
+    long encoderCounts = myEnc.read(); // Read the current counts from the encoder
+    float rotationDegrees = (encoderCounts / 1680.0) * 360.0; // Calculate the rotation in degrees
+    Serial.print("Rotation: ");
+    Serial.print(rotationDegrees);
+    Serial.println(" degrees");
+    // SerialDebug.print(F("encPos: ")); SerialDebug.print(encPos); SerialDebug.print('\t');
+    // SerialDebug.print(F("domeCenterSet: ")); SerialDebug.print(domeCenterSet); SerialDebug.print('\t');
+    // SerialDebug.print(F("domeServoMode: ")); SerialDebug.print(domeServoMode); SerialDebug.print('\t');
+    // SerialDebug.print(F("domeSpin: ")); SerialDebug.print(receiveFromESP32Data.domeSpin); SerialDebug.print('\t');
+    // SerialDebug.print(F("positionDifference: ")); SerialDebug.print(positionDifference); SerialDebug.print('\t');
+    // SerialDebug.print(F("targetPosition: ")); SerialDebug.print(targetPosition); SerialDebug.print('\t');
+    // SerialDebug.print(F("hallEffectSensor: ")); SerialDebug.print(hallEffectSensor); SerialDebug.print('\t');
+    // SerialDebug.print(F("enableDrive: ")); Serial.print(enableDrive); SerialDebug.println('\t');
   #endif
   
   #ifdef debugHALLFull
